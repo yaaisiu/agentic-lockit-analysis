@@ -1,0 +1,23 @@
+# --- Client / third-party data — NEVER commit (spec §9) ---
+/data/**
+/sources/**
+# keep the empty-dir anchors so the skeleton exists on a fresh clone
+!/data/.gitkeep
+!/sources/.gitkeep
+
+# --- Secrets ---
+.env
+.env.*
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# --- OS / editor cruft ---
+.DS_Store
+*.swp
+# Obsidian per-machine workspace state (keep the rest of .obsidian if it appears)
+.obsidian/workspace*

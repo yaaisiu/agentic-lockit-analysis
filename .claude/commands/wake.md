@@ -17,6 +17,11 @@ Orient at the start of a session. Do this, then give a 3–5 line "you are here"
 5. Skim `vault/library/` (conventions, heuristics, script-templates, glossary) so you
    **recognise** known patterns before re-inferring on any new file.
 6. Read the most recent `vault/dev/sessions/NNN-*.md` for immediate context.
+7. Skim Claude Code's **volatile** project memory (L1). Per
+   `vault/02_SYSTEM/memory-policy.md`, treat it as staging: note anything important that
+   lives *only* there and isn't yet hardened into a git-tracked artifact — flag it for
+   hardening at `/retro`.
 
-Then summarise: current phase, active lockit (if any), the next gated step, and any
-open questions awaiting Marcin. Do not start work past a gate without confirmation.
+Then summarise: current phase, active lockit (if any), the next gated step, any open
+questions awaiting Marcin, and any un-hardened memory. Do not start work past a gate
+without confirmation.

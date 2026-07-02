@@ -9,6 +9,9 @@
 .env
 .env.*
 
+# --- Machine-local Claude Code settings (per-machine permission grants) ---
+.claude/settings.local.json
+
 # --- Python ---
 __pycache__/
 *.py[cod]

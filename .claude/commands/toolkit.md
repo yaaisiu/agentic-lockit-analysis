@@ -18,7 +18,10 @@ where one fits (adapt, don't reinvent). Typical set (spec §7):
 - `find_over_limit.py` — strings exceeding their char limit.
 - `validate_placeholders.py` — cross-locale placeholder consistency.
 - (add `gender_pairs.py`, `export_subset.py`, etc. as the profile warrants.)
-Write them to `scripts/$1/`. Each script header cites the profile + GATE 1.
+Write them to `scripts/$1/`. **Every script header explains the *why*** — the reasoning
+and assumptions behind how it's built — in plain language a *less-capable agent* can
+follow and reproduce, not just what it does. Cite the profile + GATE 1. Rationale-first
+comments are a deliverable, not decoration (see `vault/02_SYSTEM/memory-policy.md`).
 
 ## 2. Run + test each on the ACTUAL lockit
 Run every script against `data/$1/<file>`. Show Marcin real output (counts, samples).
@@ -35,4 +38,6 @@ Present each script: what it does, example invocation, actual output. Refine per
   "if structure changed, re-profile before trusting these."
 - Index the toolkit in `vault/lockits/$1/toolkit.md`.
 - (Optional) expose common queries as `/lockit:*` slash commands.
-Update `vault/dev/STATE.md`. Then run `/retro`.
+Update `vault/dev/STATE.md`. Then run `/retro` — where validated, broadly useful scripts
+(with their *why*) are proposed for promotion to `vault/library/script-templates/` so the
+next file starts from a template, not a blank page.

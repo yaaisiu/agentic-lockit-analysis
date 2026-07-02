@@ -113,8 +113,10 @@ promoted_session: <NNN>
 Body: the detection rule the inference step consults (what to look for → what it means).
 
 ### `script-templates/<id>.py`
-A reusable, parameterised Python script. Header comment must state: purpose, the
-convention/heuristic it embodies, `first_seen` lockit, and how to parameterise it.
+A reusable, parameterised Python script. Header comment must state: purpose, the **why**
+(plain-language rationale a less-capable agent can follow and reproduce), the
+convention/heuristic it embodies, `first_seen` lockit, and how to parameterise it. See
+[[memory-policy]] (documenting the *why* + hardening validated code is policy, not optional).
 
 ---
 

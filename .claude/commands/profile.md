@@ -26,10 +26,18 @@ separate sheets?) · key-naming conventions (namespaces, gender/number markers, 
 numbers (in keys? text? columns?) · control codes & markup · limits/constraints.
 **Flag every ambiguity as an explicit question** — do not silently guess.
 
-## 4. GATE 1 — Marcin confirms/corrects
-Present: the inferred structure + a numbered list of open questions. Wait for decisions.
-Record every decision in `vault/lockits/$1/open-questions.md` (status, decision,
-decided_at, gate).
+## 4. GATE 1 — present a REVIEW DOSSIER, Marcin confirms/corrects
+Do not just assert structure — produce a **review dossier** Marcin can verify by
+navigating the lockit himself. Write it to `data/$1/gate1-review.md` (**gitignored** —
+it cites real content). For every anatomy claim (spec §5), give:
+- **Claim** — what you infer.
+- **Evidence** — exact pointer(s) into the lockit: `file:line` (+ msgctxt/entry id), and
+  a short real example so he can navigate straight to it.
+- **Reasoning** — *why* you concluded this (plain language a weaker agent could follow).
+- **Confirm / Correct** — a slot for his decision. Flag ambiguities as explicit questions.
+Present it; wait for decisions. Record each in `vault/lockits/$1/open-questions.md`
+(status, decision, decided_at, gate). Later, when Marcin spots new patterns, add them
+to the dossier and re-confirm.
 
 ## 5. Document (only after GATE 1)
 Write, per the schema:

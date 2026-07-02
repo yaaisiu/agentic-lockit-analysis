@@ -13,8 +13,8 @@
 - Toolkit is built, tested (10 passing), packaged, documented. GATE 0/1/2 cleared.
 - Library seeded: conventions `gettext-po`, `inline-context-prefix`, `list-grammar-cldr`;
   heuristics `gettext-detection`, `review-dossier`; template `po_parse_template.py`.
-- One item awaiting approval: a small **CLAUDE.md addition** (pointer to memory-policy +
-  why-docs). Apply if Marcin approves.
+- CLAUDE.md updated with the memory-policy pointer + why-docs principle (done). No items
+  awaiting approval.
 
 ## The point of next session — prove the loop pays off (spec Phase 6)
 Pick with Marcin:

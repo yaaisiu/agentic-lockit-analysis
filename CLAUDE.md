@@ -28,12 +28,13 @@ Marcin's guidance isn't a fallback — it's how any unknown file becomes tractab
 
 ## Memory lives in the vault (and the skills)
 
-This repo holds the memory. Per file: `vault/lockits/<name>/` (profile, structure, variables, open-questions, toolkit). Cross-file: `vault/library/` (conventions, heuristics, script-templates) — the thing that makes the next file faster. **Consult `library/` first** (recognise before re-inferring). **When something important changes, its note changes in the same session.** A provided game repo/folder to search lives in `sources/<name>/`; the acquired lockit file(s) + outputs live in `data/<name>/` (both gitignored — client/third-party data).
+This repo holds the memory. Per file: `vault/lockits/<name>/` (profile, structure, variables, open-questions, toolkit). Cross-file: `vault/library/` (conventions, heuristics, script-templates) — the thing that makes the next file faster. **Consult `library/` first** (recognise before re-inferring). **When something important changes, its note changes in the same session.** A provided game repo/folder to search lives in `sources/<name>/`; the acquired lockit file(s) + outputs live in `data/<name>/` (both gitignored — client/third-party data). **Two memory layers:** Claude Code's project memory is *volatile staging*; this repo is the durable system of record. Harden volatile facts into git at `/retro` — see `vault/02_SYSTEM/memory-policy.md`.
 
 ## How the system learns
 
 - **From Marcin:** corrections at the gates → captured, then distilled into `library/` so the mistake isn't repeated.
 - **From the processes:** recurring patterns and reusable scripts → **promoted** into `library/conventions`, `library/heuristics`, `library/script-templates`.
+- **Document the *why*, promote the code.** Explain the reasoning behind code/decisions so a *cheaper* model can follow and reproduce it; once validated, broadly useful code/conventions are promoted to `library/` (proposed → approved → applied).
 - **Guardrail:** never silently rewrite `library/`, a skill, or this file. Promotions are **proposed at reflection, approved by Marcin, then applied** — each committed with the lockit/session id that produced it.
 
 ## Security (day one)

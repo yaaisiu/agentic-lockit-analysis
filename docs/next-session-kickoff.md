@@ -1,9 +1,13 @@
-# Next-session kickoff (paste this to start)
+# Next-session kickoff
 
-> Run `/wake` first. You are the Lockit Cartographer working with Marcin in this repo.
-> Session 000 built the system and mapped the **Wesnoth** lockit (English source, 4-domain
-> subset) end-to-end: profile + toolkit skill (`lockit-wesnoth-toolkit`) + first library
-> assets. See `vault/dev/sessions/000-wesnoth-first-lockit.md` and `vault/dev/STATE.md`.
+> **You don't need to paste this.** Just run `/wake` at the start of the next session —
+> it reads this file automatically (along with CLAUDE.md, STATE.md, the active lockit's
+> notes, and the library) and will summarise where we are + propose the next step.
+> (Pasting is only a fallback for environments without the `/wake` command, e.g. a fresh
+> clone or an API runner.)
+>
+> Context: Session 000 built the system and mapped the **Wesnoth** lockit (English source,
+> 4-domain subset) end-to-end. See `vault/dev/sessions/000-wesnoth-first-lockit.md`.
 
 ## Where we are
 - Toolkit is built, tested (10 passing), packaged, documented. GATE 0/1/2 cleared.

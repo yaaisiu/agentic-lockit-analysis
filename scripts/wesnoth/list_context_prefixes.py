@@ -16,7 +16,16 @@ from po_parse import parse_file, strings
 
 
 def family(p):
-    if p in ("female", "male", "gender"): return "gender"
+    # Gender + grammatical-agreement variants (translation-critical: a translator must know
+    # which forms exist and when the engine selects them). Covers the plain gender carets and
+    # the agreement markers found corpus-wide: female_speaker/_addressed, self_female,
+    # race+female, friend_is_female/_male, addressed_plural, plural, race+plural. (session 001, B3)
+    pl = p.lower()
+    if (p in ("female", "male", "gender")
+            or "female" in pl or pl.startswith("male") or "_male" in pl
+            or "plural" in pl or "addressed" in pl
+            or pl.startswith(("self_", "friend_is_", "race+"))):
+        return "gender/agreement"
     if p.startswith(("addon", "addons")): return "add-ons"
     if p.startswith(("prefix_", "infix_")): return "SI number units"
     if p.startswith(("conjunct", "disjunct")): return "list grammar"

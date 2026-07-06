@@ -1,7 +1,7 @@
 ---
 description: Session-end ritual — harden volatile memory, propose library promotions (approve → apply), write session note + next-session kickoff.
-argument-hint: "[lockit-name]"
-allowed-tools: "Read Write Edit Glob Grep Bash"
+argument-hint: [lockit-name]
+allowed-tools: Read Write Edit Glob Grep Bash
 ---
 
 # /retro

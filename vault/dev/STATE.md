@@ -1,13 +1,15 @@
 ---
 type: dev-state
-updated: 2026-07-02
-phase: 5
+updated: 2026-07-06
+phase: 6
 active_lockit: wesnoth
 ---
 
 # STATE — you are here
 
-**Phase 0 complete (scaffold built). No lockit intaken yet. Awaiting `/intake`.**
+**Phase 6 in progress. Wesnoth mapped + toolkit extended corpus-wide (32 domains) and
+proven on a de/pl multi-language pilot. English-analysis foundation is solid; next is a
+second, differently-structured lockit to test whether the library speeds intake.**
 
 ## Done
 - Repo scaffolded per spec §6; `git init` done (first commit: scaffold only).
@@ -37,10 +39,27 @@ active_lockit: wesnoth
 - **Library seeded (applied at /retro):** conventions `gettext-po`, `inline-context-prefix`,
   `list-grammar-cldr`; heuristics `gettext-detection`, `review-dossier`; script-template
   `po_parse_template.py` (verified on real files).
-- **NEXT — Phase 6 (generality test):** see `docs/next-session-kickoff.md`. Option A: run
-  toolkit across all 32 domains + pull pilot `.po` (de/pl) → build `validate_placeholders.py`.
-  Option B: intake a differently-structured (non-gettext) lockit to test library speedup.
-- **Awaiting approval:** small CLAUDE.md addition (pointer to memory-policy + why-docs).
+## Session 001 DONE — Option A (corpus-wide + multi-language), 2026-07-06
+- **Generality confirmed:** toolkit ran across **all 32 domains**, no re-profiling —
+  26,312 strings, **ids 26,312/26,312 unique, 0 collisions**. Anatomy holds.
+- **Toolkit extended (Marcin-approved):** 3 markup families (Pango/DocBook/po4a) with
+  per-family + ERROR/WARN validation; `{brace}` + hex-entity classes; refined `$var`
+  tokenizer; `gender/agreement` prefix family (129-prefix registry regenerated).
+- **Multi-language capability built:** `validate_placeholders.py` (cross-locale) — de/pl
+  pilot found **8 real upstream defects, 0 false positives**. Framed as a *prepared* tool;
+  focus stays on English analysis.
+- **Tests 10 → 21, all pass.** Vault notes (profile/variables/structure/context-prefixes/
+  open-questions/toolkit) updated in-session.
+- **Human-in-the-loop review** (`data/wesnoth/session001-review.md`): A1–A4 confirmed;
+  B1 (`&`→WARN), B3 (gender/agreement family) applied; B4 (DocBook pre-seed, CLI-collision
+  names excluded); T5 resolved; T6/T7 tracked.
+- **Library promotions applied (Marcin approved in review C1):** heuristic `markup-families`,
+  convention `cross-locale-invariants`, template `validate_placeholders.py`.
+
+- **NEXT — Phase 6 (Option B):** intake a **second, differently-structured (non-gettext)
+  lockit** (`.xlsx`/`.csv`/`.ftl`/`.json`) to test whether the library made intake faster —
+  does `gettext-detection` correctly say "not gettext", does `review-dossier` speed GATE 1,
+  do new formats seed new library assets? See `docs/next-session-kickoff.md`.
 
 ## Policy added this session (from Marcin's guidance)
 - **Memory is two-layer + hardened.** `vault/02_SYSTEM/memory-policy.md`: volatile
@@ -49,8 +68,8 @@ active_lockit: wesnoth
 - **Document the *why* + harden working code.** Scripts carry plain-language rationale
   for less-capable agents; validated, broadly useful code is promoted to
   `vault/library/` principles. Folded into `/toolkit`, `/retro`, `schema.md`.
-- **Proposed CLAUDE.md addition (NOT yet applied — needs approval):** a short pointer to
-  the memory-policy + why-docs principle, so the cornerstone references them.
+- **CLAUDE.md pointer to memory-policy + why-docs — APPLIED** (session 000 retro). No
+  cornerstone changes pending.
 
 ## North-star goals (design toward; raise at decision points)
 1. **Cheaper models can do the job.** Profiles, conventions, and library must be

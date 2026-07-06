@@ -1,7 +1,7 @@
 ---
 description: Generate + test deterministic extraction scripts for the profiled lockit → GATE 2 → package as a skill.
-argument-hint: "<lockit-name>"
-allowed-tools: "Read Write Edit Glob Grep Bash"
+argument-hint: <lockit-name>
+allowed-tools: Read Write Edit Glob Grep Bash
 ---
 
 # /toolkit $ARGUMENTS

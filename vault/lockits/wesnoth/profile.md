@@ -2,21 +2,24 @@
 type: lockit-profile
 lockit: wesnoth
 format: gettext-pot
-textdomains: [wesnoth-lib, wesnoth, wesnoth-units, wesnoth-httt]
-locales: [en]
-row_count: 5258
+textdomains: all-32
+profiled_textdomains: [wesnoth-lib, wesnoth, wesnoth-units, wesnoth-httt]
+locales: [en, de, pl]
+row_count: 26312
+markup_families: [pango, docbook, po4a]
 profiled_at: 2026-07-02
-session: "000"
+session: "001"
 status: confirmed
 ---
 
 # Wesnoth — profile (the chart)
 
-The data dictionary for the Wesnoth lockit (English source, 4-domain subset). Confirmed
-with Marcin at GATE 1 (2026-07-02). **No lockit content here** — examples are synthetic;
-real strings live in gitignored `data/wesnoth/`. Companions: [[structure]], [[variables]],
-[[context-prefixes]], [[open-questions]]. Standard-vs-Wesnoth conventions are proposed for
-promotion in [[gettext-po]].
+The data dictionary for the Wesnoth lockit. Confirmed with Marcin at GATE 1 on a 4-domain
+English subset (session 000), then **confirmed corpus-wide across all 32 domains + a de/pl
+translation pilot** (session 001). **No lockit content here** — examples are synthetic; real
+strings live in gitignored `sources/wesnoth/` (+ `data/wesnoth/`). Companions: [[structure]],
+[[variables]], [[context-prefixes]], [[open-questions]], [[toolkit]]. Standard-vs-Wesnoth
+conventions are proposed for promotion in [[gettext-po]].
 
 > **What kind of lockit this is:** a **GNU gettext** localisation set — *not* a spreadsheet.
 > There is no key column, no char-limit column, no locale columns; identity is the source
@@ -25,17 +28,23 @@ promotion in [[gettext-po]].
 
 ## Shape
 - Format: gettext PO **template** (`.pot`), UTF-8, flat entry list (blank-line separated).
-- Subset: 4 of 32 textdomains, **5,258 entries**; ~105k tokens (full corpus ≈520k).
+- **All 32 textdomains, 26,312 entries** (~520k tokens). GATE 1 deep-profiled 4 domains
+  (5,258 entries); session 001 confirmed the anatomy across the remaining 28 with no
+  re-profiling — **ids 26,312/26,312 unique, 0 collisions**.
 - Per file: a header entry (empty `msgid`) then entries of `msgid` (+ optional
-  `msgid_plural`) with `#. #: #, #|` comments; `msgstr` empty in templates. Details:
-  [[structure]].
+  `msgid_plural`) with `#. #: #, #|` comments; `msgstr` empty in templates (filled per
+  locale in the `.po`). Details: [[structure]].
 
 ## String types
 - **Primary axis = the textdomain (file):** UI/settings → `wesnoth-lib`; core system →
-  `wesnoth`; unit names/descriptions → `wesnoth-units`; campaign narrative/dialogue →
-  `wesnoth-httt` (one of ~24 campaign domains).
-- **Secondary axis = the `^` context prefix** (105 in subset), e.g. `menu section^…`,
-  `log_level^…`, SI `prefix_kilo^…`. Full list: [[context-prefixes]].
+  `wesnoth`; unit names/descriptions → `wesnoth-units`; campaign narrative → `wesnoth-httt`
+  (one of ~24 campaign domains).
+- **Markup family also stratifies the domains** (session 001): **Pango** in the 29
+  game-content domains; **DocBook** in `wesnoth-manual`; **po4a/POD man** in
+  `wesnoth-manpages`; the `wesnoth` core also carries `{brace}` name-generator grammar.
+  See [[variables]] §3.
+- **Secondary axis = the `^` context prefix** (**129 corpus-wide**), e.g. `scenario name^…`,
+  `log_level^…`, gender `female^…`, SI `prefix_kilo^…`. Full registry: [[context-prefixes]].
 
 ## Identity / keys  (GATE 1 decision)
 - No key column. Natural key = **`(textdomain, msgctxt, msgid[, msgid_plural])`** — the
@@ -54,13 +63,17 @@ promotion in [[gettext-po]].
 - Gender via caret: `female^…` (×80), `male^…` (×1), `gender^…` (×3); base string = default.
 
 ## Variables & placeholders  (detail + regex in [[variables]])
-- `$var` / `$obj.attr` / `$arr[0]` WML substitution; `|` terminates a name (`$var|`),
-  space also terminates but is shown. **Preserve verbatim.**
+- `$var` / `$obj.attr` / `$arr[0]` WML substitution; `|` terminates a name (`$var|`), space
+  also terminates but is shown. **Preserve verbatim.** (Tokenizer stops at a sentence period,
+  session 001.)
+- `{brace}` name-generator grammar (`{prefix}{suffix}`) in the `wesnoth` core domain —
+  preserve every `{key}`.
 - Caret `context^string`: engine strips through the first `^`; translate only the payload.
-- Pango markup `<b> <i> <span>` (+ legacy `<italic>text='…'>`); translate only `text='…'`
-  and prose. Help/command markup `<ref dst='' text=''>`, `<command>`, and command-usage
-  metasyntax `<side>`/`<var>=<value>` — preserve tokens.
-- XML entities `&quot; &lt; &gt; &amp;` — preserve escaped.
+- Markup, **three families** (auto-detected): **Pango** `<b> <i> <span>` (+ legacy
+  `<italic>text='…'>`); **DocBook** `<emphasis> <link> <imagedata/>` (manual); **po4a**
+  `B<…> I<…> E<lt>` (manpages). Translate only prose / `text='…'`; preserve tags.
+- Bare `<side>`/`<nickname>` = CLI argument metasyntax (not markup) — preserve whole token.
+- XML/Wesnoth entities `&quot; &lt; &amp; &#8217; &#x7B; &#0x7B;` — preserve escaped.
 
 ## Numbers
 - No numeric ID/limit columns. Numbers arrive via `$vars`, printf `%d`/`%s` (rare), and
@@ -76,6 +89,8 @@ promotion in [[gettext-po]].
   (Contrast with UI-spreadsheet lockits.) Revisit only if a future domain adds hints.
 
 ## Open questions resolved / tracked
-See [[open-questions]]: identity (Q1), gender/escape corrections (C3.1/C5.3), rare tags
-(Q2), entities (Q3), prefix taxonomy (Q4); tracked T1 (var↔id link), T2/T3 (command/help
-markup), T4 (registry growth as more domains arrive).
+See [[open-questions]]: identity (Q1), gender/escape corrections (C3.1/C5.3), rare tags (Q2),
+entities (Q3), prefix taxonomy (Q4); **session 001** resolved T2 (CLI metasyntax classified),
+T3 (help/man markup covered by DocBook+po4a families), T4 (registry regenerated 105→129).
+Still tracked: T1 (value-level cross-domain agreement hazard), T5 (`family()` heuristic misses
+gender/plural agreement variants), T6 (corpus-wide multi-locale QA sweep).

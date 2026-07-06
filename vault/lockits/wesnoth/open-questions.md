@@ -1,7 +1,7 @@
 ---
 type: lockit-open-questions
 lockit: wesnoth
-updated: 2026-07-01
+updated: 2026-07-02
 ---
 
 # Wesnoth — open questions & decisions
@@ -57,8 +57,47 @@ All Round-1 claims confirmed with corrections below; full evidence in
   expands to a localized unit name from `wesnoth-units` inserted mid-sentence → gender/case
   agreement hazard. Recorded in [[variables]].
 
-## Still open / tracked (revisit with more domains)
-- **T2 — command-help angle placeholders (Q2):** whether inner words are ever translated
-  (no cited Wesnoth rule; currently preserve all).
-- **T3 — help markup `<ref>/<command>` (C5.2):** semantics clearer with help/manual domains.
-- **T4 — prefix registry growth:** new `^` prefixes as more domains/files are ingested.
+### Phase 6 — corpus-wide generality + multi-language (2026-07-02, session 001)
+Ran the finished toolkit over **all 32 domains** with no re-profiling; extended it (Marcin
+approved "cover all 3" families). decided_by: Marcin · gate: post-GATE-2 extension.
+- **Anatomy holds corpus-wide — CONFIRMED.** 26,312 strings, **internal ids 26,312/26,312
+  unique, 0 collisions**. The GATE 1 identity model is lossless at full scale.
+- **Three markup systems, domain-separated — DOCUMENTED.** Pango (29 game domains),
+  **DocBook** (`wesnoth-manual`), **po4a/POD man** (`wesnoth-manpages`). `validate_markup`
+  now auto-selects the family; full corpus → 1 real source defect, 0 false positives.
+  See [[variables]] §3.
+- **`{brace}` name-generator grammar — DOCUMENTED** as a placeholder class (§3b, 286 occ).
+- **Hex entities `&#x`/`&#0x` — ADDED** to the entity recogniser (§5).
+- **`$var` tokenizer refined** to not swallow a trailing sentence period (fixed 6 false
+  cross-locale mismatches). See [[variables]] §1.
+- **T2 — RESOLVED (classified).** Bare `<side>`/`<nickname>` are **CLI argument metasyntax**
+  (single-token slots), now distinguished from Pango, DocBook, and po4a. Preserve verbatim;
+  no balance-check. Inner-word translation still has no cited rule → keep preserving.
+- **T3 — RESOLVED.** Help/`<ref>` is Pango (balance-checked); man/DocBook semantics now
+  covered by the po4a/DocBook families.
+- **T4 — RESOLVED (registry regenerated).** 105 → **129** prefixes / 712 entries, corpus-wide.
+  Registry is now script-generated ([[context-prefixes]]); growth is a `git diff`, not manual.
+- **Multi-language STARTED (prepared capability).** `validate_placeholders.py` (cross-locale)
+  built + tested; de/pl pilot over 4 domains found **8 real defects, 0 false positives**. See
+  [[variables]] §10. *Framing (Marcin): the current focus is the **English** lockit analysis +
+  tooling; multi-language is a prepared tool, run in earnest later.*
+
+### Review-dossier decisions (2026-07-06, `data/wesnoth/session001-review.md`)
+- **A1–A4 CONFIRMED** — markup-family detection, refined `$var`, `{brace}` name-generator
+  reading, `&#0x7B;`=`{`. (A1 caveat: not every file eyeballed — revise if something new turns up.)
+- **B1 — DECIDED: unescaped `&`-in-markup → `WARN`, not `ERROR`.** Engine tolerates a literal
+  `&` used as "and"; flag for a human. `validate_markup` now emits ERROR/WARN. Corpus = 0/1.
+- **B3 — DONE: `gender/agreement` family** added to `family()` (12 prefixes) — trace all
+  gender/plural mechanics for translators. See [[context-prefixes]]. **T5 RESOLVED.**
+- **B4 — DONE: DocBook set pre-seeded** with inline/GUI tags, **excluding** names that collide
+  with bare CLI slots (`command`, `option`, …) — that collision would false-flag "unclosed".
+
+## Still open / tracked
+- **T6 — corpus multi-locale QA sweep (DEFERRED, post-English):** run `validate_placeholders`
+  across more locales / all 32 domains. We surface upstream defects, never fix (GPL data).
+- **T7 — `$var` rare constructs (corpus audit):** `$(…)` WML formula (8 occ) and `$x[$i]`
+  variable index (6 occ) tokenize imprecisely but safely (no cross-locale false positives).
+  Give `$(…)` its own token class only if needed. See [[variables]] §1.
+- **T2-residual:** whether a CLI metasyntax inner word is ever translated — still no cited rule.
+- **A3-followup (localization phase):** name-generator affix **order** (`{prefix}{suffix}`) is
+  grammar-fixed; some languages may need different order/connectors. Revisit with translations.

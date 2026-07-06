@@ -24,9 +24,12 @@ except ImportError:                   # minimal shim so `python test_toolkit.py`
         mark = _Mark()
     pytest = _P()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import po_parse, po_tokens, validate_markup
+import po_parse, po_tokens, validate_markup, validate_placeholders as vph
+from list_context_prefixes import family as prefix_family
 
 HEADER = 'msgid ""\nmsgstr ""\n"Content-Type: text/plain; charset=UTF-8\\n"\n'
+# translation header carries a Plural-Forms line (de-style: nplurals=2)
+TR_HEADER = (HEADER + '"Plural-Forms: nplurals=2; plural=(n != 1);\\n"\n')
 
 
 def write_po(tmp_path, body, name="synthetic.pot"):
@@ -34,6 +37,14 @@ def write_po(tmp_path, body, name="synthetic.pot"):
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(HEADER + "\n" + textwrap.dedent(body), encoding="utf-8")
     return str(p)
+
+
+def write_pair(tmp_path, src_body, tr_body):
+    """Write a source .pot and a translation .po (with Plural-Forms header) → (src, tr)."""
+    src = write_po(tmp_path, src_body, "dom/dom.pot")
+    p = tmp_path / "dom" / "de.po"
+    p.write_text(TR_HEADER + "\n" + textwrap.dedent(tr_body), encoding="utf-8")
+    return src, str(p)
 
 
 # ---------- po_parse ----------
@@ -136,10 +147,121 @@ def test_angle_tokens_kinds():
 def test_markup_balance_and_ampersand_gating():
     assert validate_markup.check_string("<b>ok</b>") == []
     assert validate_markup.check_string("Save & Quit") == []          # plain text: & is fine
-    assert any("unbalanced" in i or "unclosed" in i
-               for i in validate_markup.check_string("<b>oops"))
-    assert any("unescaped" in i
-               for i in validate_markup.check_string("<b>bad & tag</b>"))  # & inside markup
+    assert any(sev == "ERROR" and ("unbalanced" in m or "unclosed" in m)
+               for sev, m in validate_markup.check_string("<b>oops"))
+    # '&' inside a markup string is a WARN, not a hard ERROR (decided session 001, B1)
+    res = validate_markup.check_string("<b>bad & tag</b>")
+    assert any(sev == "WARN" and "unescaped" in m for sev, m in res)
+    assert all(sev != "ERROR" for sev, m in res)
+
+
+# ---------- markup families: DocBook + po4a + brace/hex (corpus-scale extension) ----------
+
+def test_markup_family_detection():
+    assert po_tokens.markup_family("<b>x</b>") == "tag"
+    assert po_tokens.markup_family("<emphasis>x</emphasis>") == "tag"
+    assert po_tokens.markup_family("B<bold> I<italic>") == "po4a"
+    # a po4a path: '</var/run…>' is span content, not a close tag → stays po4a
+    assert po_tokens.markup_family("B</var/run/socket>") == "po4a"
+    # a Pango string that happens to contain 'P<' but has a real close tag → tag
+    assert po_tokens.markup_family("HP<b>10</b>") == "tag"
+
+
+def test_docbook_balance():
+    assert validate_markup.check_string("<emphasis>hi</emphasis>") == []
+    assert validate_markup.check_string("<link>a</link> <literal>b</literal>") == []
+    # pre-seeded DocBook inline tag (session 001 B4) balances too
+    assert validate_markup.check_string("<guimenuitem>Load</guimenuitem>") == []
+    assert any(sev == "ERROR" and ("unclosed" in m or "unbalanced" in m)
+               for sev, m in validate_markup.check_string("<emphasis>oops"))
+    # <imagedata …> is empty/self-closing — must NOT report as unclosed
+    assert validate_markup.check_string(
+        "<imageobject><imagedata fileref='a.png'/></imageobject>") == []
+    assert validate_markup.check_string(
+        "<imageobject><imagedata fileref='a.png'></imageobject>") == []
+
+
+def test_po4a_markup_ok_and_defects():
+    assert validate_markup.check_string("B<bold> and I<italic> and E<lt>x E<gt>") == []
+    assert validate_markup.check_string("B</var/run/wesnothd/socket>") == []
+    # missing '>' → unbalanced po4a
+    assert any(sev == "ERROR" and "unbalanced po4a" in m
+               for sev, m in validate_markup.check_string("B<bold and I<italic>"))
+    # a bare '<' should have been E<lt>
+    assert any(sev == "ERROR" and "bare '<'" in m
+               for sev, m in validate_markup.check_string("E<lt> then a bare < oops"))
+
+
+def test_brace_var_and_hex_entity():
+    f = po_tokens.find("main={prefix}{suffix} and &#0x7B; and &#x7D; and &#38;")
+    assert "{prefix}" in f["brace_var"] and "{suffix}" in f["brace_var"]
+    assert "&#0x7B;" in f["entity"] and "&#x7D;" in f["entity"] and "&#38;" in f["entity"]
+    # hex/0x entities must NOT be flagged as unescaped '&' inside a markup string
+    assert validate_markup.check_string("<b>brace &#0x7B; here</b>") == []
+
+
+def test_bare_cli_metasyntax_not_errored():
+    # bare <side>/<nickname> are argument slots (metasyntax), not markup → no hard issue
+    assert validate_markup.check_string("Usage: --side <side> for <nickname>") == []
+
+
+def test_prefix_family_gender_agreement():
+    # gender + agreement variants all land in one translation-critical family (session 001 B3)
+    for p in ["female", "male", "gender", "female_speaker", "female_addressed",
+              "self_female", "race+female", "friend_is_female", "friend_is_male",
+              "addressed_plural", "plural", "race+plural"]:
+        assert prefix_family(p) == "gender/agreement", p
+    # bare 'race' is a race-name context, NOT agreement; others keep their families
+    assert prefix_family("race") == "other/UI"
+    assert prefix_family("prefix_kilo") == "SI number units"
+    assert prefix_family("addon_state") == "add-ons"
+
+
+# ---------- validate_placeholders: cross-locale (multi-language) ----------
+
+def test_vph_invented_placeholder(tmp_path):
+    src, tr = write_pair(tmp_path,
+        'msgid "Gold: $gold"\nmsgstr ""\n',
+        'msgid "Gold: $gold"\nmsgstr "Zloto: $glod"\n')      # $glod ∉ source
+    findings, _, _ = vph.check_pair(src, tr)
+    assert any("invented" in m and "$glod" in m for _, _, _, m in findings)
+
+
+def test_vph_dropped_placeholder_nonplural(tmp_path):
+    src, tr = write_pair(tmp_path,
+        'msgid "$count/1000 tiles"\nmsgstr ""\n',
+        'msgid "$count/1000 tiles"\nmsgstr "/1000 pol"\n')   # $count dropped
+    findings, _, _ = vph.check_pair(src, tr)
+    assert any("dropped" in m and "$count" in m for _, _, _, m in findings)
+
+
+def test_vph_plural_form_may_omit_var(tmp_path):
+    # the singular form legitimately has no $units_to_slay → must NOT be flagged 'dropped'
+    src, tr = write_pair(tmp_path,
+        'msgid "Defeat one unit"\nmsgid_plural "Defeat $units_to_slay units"\n'
+        'msgstr[0] ""\nmsgstr[1] ""\n',
+        'msgid "Defeat one unit"\nmsgid_plural "Defeat $units_to_slay units"\n'
+        'msgstr[0] "Besiege eine"\nmsgstr[1] "Besiege $units_to_slay"\n')
+    findings, _, _ = vph.check_pair(src, tr)
+    assert not any(sev == "ERROR" for sev, _, _, _ in findings)
+
+
+def test_vph_translation_markup_break(tmp_path):
+    src, tr = write_pair(tmp_path,
+        'msgid "<b>Bold</b>"\nmsgstr ""\n',
+        'msgid "<b>Bold</b>"\nmsgstr "<b>Pogrubienie"\n')     # unclosed <b> in translation
+    findings, _, _ = vph.check_pair(src, tr)
+    assert any("markup" in m for _, _, _, m in findings)
+
+
+def test_vph_nplurals_and_trailing_dot_not_a_defect(tmp_path):
+    # $version. (var + sentence period) must match across locales — no invented/dropped
+    src, tr = write_pair(tmp_path,
+        'msgid "Running $version."\nmsgstr ""\n',
+        'msgid "Running $version."\nmsgstr "Wersja $version."\n')
+    findings, _, npl = vph.check_pair(src, tr)
+    assert npl == 2
+    assert not any(sev == "ERROR" for sev, _, _, _ in findings)
 
 
 # ---------- optional integration (skips without real data) ----------

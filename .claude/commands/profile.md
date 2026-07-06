@@ -1,7 +1,7 @@
 ---
 description: Recon → consult library → infer lockit structure → GATE 1 → document in the vault.
-argument-hint: "<lockit-name>"
-allowed-tools: "Read Write Edit Glob Grep Bash"
+argument-hint: <lockit-name>
+allowed-tools: Read Write Edit Glob Grep Bash
 ---
 
 # /profile $ARGUMENTS

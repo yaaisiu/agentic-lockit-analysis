@@ -1,7 +1,7 @@
 ---
 description: Session-start ritual — load the cornerstone, active lockit notes, and STATE.
-argument-hint: "[lockit-name]"
-allowed-tools: "Read Glob"
+argument-hint: [lockit-name]
+allowed-tools: Read Glob
 ---
 
 # /wake

@@ -1,7 +1,7 @@
 ---
 description: Acquire a lockit — a provided file (Mode A) or a game repo/folder to search (Mode B). Ends at GATE 0.
-argument-hint: "<file-path | folder-path | git-url>"
-allowed-tools: "Read Glob Grep Bash"
+argument-hint: <file-path | folder-path | git-url>
+allowed-tools: Read Glob Grep Bash
 ---
 
 # /intake $ARGUMENTS

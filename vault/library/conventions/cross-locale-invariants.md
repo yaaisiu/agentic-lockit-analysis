@@ -3,7 +3,7 @@ type: convention
 id: cross-locale-invariants
 status: accepted
 first_seen: wesnoth
-also_seen: []
+also_seen: [veloren]
 promoted_session: "001"
 ---
 
@@ -36,6 +36,16 @@ translation never carries it).
   extra particle, or drop an English-only distinction). Treat invariant violations as
   **flags for human review**, not automatic "bugs" — especially adds/drops of *whole words*
   vs. the hard cases (placeholder/markup/arity) which are almost always real.
+- **Engine-supplied agreement variables** (added at Veloren, s002): a locale may legitimately
+  **introduce** a placeholder the source lacks when the engine provides it for grammatical
+  agreement (e.g. a `*_gender` context var an inflecting language needs but English doesn't).
+  Do NOT flag these as "invented" — maintain a small allow-list / pattern of engine-supplied
+  vars per lockit and exempt them (they're a `project`-origin construct, [[construct-origin-labeling]]).
+- **Random-pick / positional variant collections** (added at Veloren, s002): when a message
+  holds a SET of interchangeable variants (a random-pick array, e.g. Fluent `.a0/.a1/…`),
+  matching a translation's variant *by index* to the source's is **unsound** — locales reorder
+  them. Don't per-index diff placeholders on these; treat like plural forms (compare softly, or
+  at the whole-set level), never a hard drop/invent ERROR.
 
 **Severity:** placeholder invent/drop, extra printf, broken markup, wrong plural arity →
 report; but remember the tool **surfaces** defects — when the data is third-party/upstream

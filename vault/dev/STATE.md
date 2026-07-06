@@ -2,14 +2,48 @@
 type: dev-state
 updated: 2026-07-06
 phase: 6
-active_lockit: wesnoth
+active_lockit: veloren
 ---
 
 # STATE — you are here
 
-**Phase 6 in progress. Wesnoth mapped + toolkit extended corpus-wide (32 domains) and
-proven on a de/pl multi-language pilot. English-analysis foundation is solid; next is a
-second, differently-structured lockit to test whether the library speeds intake.**
+**Phase 6. Session 002 DONE — the generality test PASSED.** Two lockits now fully mapped +
+tooled: Wesnoth (gettext, 32 domains) and **Veloren (Fluent `.ftl`)** — different formats,
+same pipeline, GATE 0/1/2 all cleared, 50 tests, skill packaged, all-locale defect report.
+The library sped intake (recogniser/ruler-out) and gained new assets. **Next session: intake
+a third, still-untested-structure lockit — a TABULAR `.xlsx`/`.csv`** (key + char-limit
+columns are the one §5 part neither gettext nor Fluent exercised). Retro promotions pending
+Marcin's approval (see below). See `docs/next-session-kickoff.md`.
+
+## Active — Veloren (Fluent `.ftl`) — GATE 0 + GATE 1 cleared, 2026-07-06
+- **Intake done (Mode B):** sparse+shallow clone of `gitlab.com/veloren/dev/veloren`
+  `assets/voxygen/i18n/` into gitignored `sources/veloren/`. GPL-3.0, licence-clean.
+- **GATE 0 scope:** English source = 48 `en/**/*.ftl` + `en/_manifest.ron` in
+  `data/veloren/en/` (gitignored). 4,241 messages (0 id collisions), 3,312 attrs, 2 terms.
+- **GATE 1 cleared** (dossier `data/veloren/gate1-review.md`, gitignored; Marcin answered
+  inline). Vault written: `profile.md` (confirmed), `structure.md`, `variables.md`,
+  `open-questions.md`. Anatomy: Fluent keyed tree; identity = unique message id; **3
+  attribute roles** (metadata `.desc/.stat` · variant-arrays `.aN` · **gender
+  `.fem/.masc/.neut`** ← echoes Wesnoth gender/agreement); inline selectors; `{ $var }`;
+  terms; `{""}` empties; Veloren-custom `TAIL()`; no markup family.
+- **Library payoff:** ✅ `gettext-detection` (not gettext) · ✅ `markup-families` (no markup)
+  · ⚠️ `inline-context-prefix`/`po_parse_template` don't fit → **new Fluent reader** needed.
+- **GATE 2 cleared — toolkit built, tested, packaged.** 9 dependency-free scripts in
+  `scripts/veloren/` (parser, report, inventory, extract, gender_pairs, validate,
+  validate_placeholders, report_all_locales, labels) + tests; **50 tests pass**. Skill
+  `lockit-veloren-toolkit` packaged; `toolkit.md` indexes it.
+- **T-V5 resolved — LABELING system built (Marcin's rule):** every construct tagged origin
+  `fluent`/`project`/`unknown` in documented registry `labels.py`; `--audit` drift catcher
+  found a 4th attribute role (`enum`). 4 attribute roles total (metadata/variant/gender/enum).
+- **Cross-locale sweep done (all 39 locales):** `data/veloren/technical-defects.md` (gitignored)
+  — **81 real technical defects, 0 false positives** (dominant: `$reason` dropped in
+  `main-login-banned/kicked` across ~16 locales; `$min_combo` in it axe descs; version skew
+  in zh-Hant). FP fixes: engine `*_gender` vars + `.aN` index mismatch excluded.
+- **Standing rule captured (→ harden at /retro):** targeted outlier/consistency checks are a
+  project rule when analysing any lockit (found PascalCase key outliers, gender attrs, enum role).
+- **NEXT — `/retro`:** propose library promotions (approve→apply): `fluent-ftl` convention,
+  `ftl_parse_template`, and the **origin-labeling + drift-audit** idea (format-general); write
+  session 002 note (already drafted as living log) + next-session kickoff.
 
 ## Done
 - Repo scaffolded per spec §6; `git init` done (first commit: scaffold only).

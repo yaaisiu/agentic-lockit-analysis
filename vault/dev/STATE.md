@@ -48,10 +48,25 @@ active_lockit: a-dark-forest
   `outlier-hunting` (+also_seen), `cross-locale-invariants` (+array-length invariant, +also_seen).
   Memory hardened: [[content-vs-code-licence]]. Session note `003-a-dark-forest-tabular-csv.md`
   + kickoff written.
-- **NEXT SESSION — close the last gap: a lockit with a CHAR-LIMIT column** (exercises spec §7
-  `find_over_limit.py`, never yet built). Source 2–3 candidates → GATE 0. Fallbacks: Polyglot
-  (CC0, 25 locales+RTL) to stress the CSV toolkit; or licence/telemetry north-stars. See
-  `docs/next-session-kickoff.md`.
+- **NEXT SESSION — HoI4 (Paradox Clausewitz pseudo-YAML), the biggest lockit yet.** Marcin
+  deferred the char-limit hunt and pivoted to HoI4. Files staged + research validated at end of
+  s003 (see below). Char-limit column remains the deferred §5 gap / fallback.
+
+## Staged — HoI4 (Clausewitz pseudo-YAML) — FIRST PROPRIETARY LOCKIT, researched not yet intaken
+- **In `sources/hoi4/` (gitignored):** 206 loose **English** `.yml` (14 MB) + `research.md`
+  (Marcin's Clausewitz field guide — content-free, cross-game).
+- **Proprietary Paradox content** — first NDA-class lockit; gitignore discipline now load-bearing.
+  Never a string into `library/`/skills/committed notes; non-commercial, no dumps.
+- **Research validated against the real files (s003 scan):** 206 files all `l_english` +
+  **UTF-8-BOM**; **129,087 entries**; format `l_english:` header + `key:VERSION "value"` (version
+  optional, ~2%); **not real YAML → line-regex parser, not PyYAML**; the doc's regex matched 100%
+  of non-blank/comment lines. Old-style dialect: `§Y…§!` colours (39.5k), `[scope/fn]` (17.9k),
+  `$VAR$` (12.7k), `\n` (6.2k), `£icon£` (1.4k), `@TAG` (200), escaped `\"` (21).
+- **Plan (in kickoff):** GATE 0 = scope a ~3–5 file **representative slice** (focus + events +
+  countries + an icon-rich file) → profile → toolkit on the slice → **scale to all 206** (Wesnoth
+  pattern). Later: propose `library/conventions/clausewitz-pdx-yaml` (per-game profile-as-data),
+  a `clausewitz-detection` heuristic, a reader template — through the gates.
+- **NEXT — `/intake hoi4`** (files staged) → GATE 0 confirm the slice.
 
 ---
 

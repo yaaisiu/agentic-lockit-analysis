@@ -3,6 +3,7 @@ type: heuristic
 id: construct-origin-labeling
 status: accepted
 first_seen: veloren
+also_seen: [a-dark-forest]
 promoted_session: "002"
 ---
 
@@ -41,5 +42,14 @@ audit** surfaces. Never silently fold the unknown into "other".
 4. When the audit flags something, classify it deliberately and extend the registry (cite the
    session), or raise it at the next gate — do not widen a pattern just to silence it.
 
+**Origin `format` generalises the per-format label (a-dark-forest, s003):** s002 used
+`fluent` for spec-defined constructs; the portable name is **`format`** (defined by whatever
+file format — Fluent, gettext, **CSV/JSON**). Use `format` going forward; `fluent`/`gettext` are
+that origin for a specific format. First tabular application: labeled **columns** (locale vs
+context vs identity), the **context-column tag DSL** (`[EMPTY]`/`[noun]`/…), **value shapes**
+(scalar/array/empty), and **key-embedded constructs** (`-N` variant, `X` template slot) — with a
+`--audit` that re-checks every run that no hidden markup/token crept in (0 unknown on the corpus).
+
 **Companion:** pairs naturally with [[outlier-hunting]] (actively look for the unexpected) and
-with any format convention ([[fluent-ftl]], [[gettext-po]]) whose constructs get labeled.
+with any format convention ([[fluent-ftl]], [[gettext-po]], [[csv-tabular]]) whose constructs get
+labeled.

@@ -3,6 +3,7 @@ type: heuristic
 id: outlier-hunting
 status: accepted
 first_seen: veloren
+also_seen: [a-dark-forest]
 promoted_session: "002"
 ---
 
@@ -41,3 +42,10 @@ outliers early turns them into explicit gate decisions instead of latent bugs. I
 
 **Reflex, not a one-off:** treat "what are the outliers here?" as a required step at recon and
 again at toolkit-build, on every lockit.
+
+**Also seen (a-dark-forest, s003, tabular CSV):** the pass surfaced a **duplicate key** (identity
+not unique), **malformed array cells** in one locale (`["?"],` stray trailing comma — a JSON-array
+broken into scalar, which the *manual* scan missed but the strict parser caught), and the
+**active-vs-deprecated** completeness distinction (most "untranslated" cells were `[DEPRECATED]`
+rows; only one locale was genuinely partial). Confirms: outliers hide in value-shape corruption
+and in status columns, not just key names.

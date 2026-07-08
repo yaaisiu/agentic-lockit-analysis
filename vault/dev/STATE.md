@@ -1,11 +1,59 @@
 ---
 type: dev-state
-updated: 2026-07-06
+updated: 2026-07-07
 phase: 6
-active_lockit: veloren
+active_lockit: a-dark-forest
 ---
 
 # STATE — you are here
+
+## Active — A Dark Forest (Godot CSV, TABULAR) — GATE 0 + GATE 1 cleared, 2026-07-07 (session 003)
+- **The deliberate gap:** first genuinely **tabular** lockit — explicit key column, context
+  column, many-locales-as-columns, CSV quoting/escaping. Closes most of the one untested §5
+  anatomy (char-limit column **deferred** — no clean source found; see below).
+- **Intake done (Mode B):** sparse+shallow clone of `github.com/TinyTakinTeller/GodotProjectZero`
+  → `sources/a-dark-forest/` (gitignored). Scope = `assets/i18n/localization.csv`, copied to
+  `data/a-dark-forest/` (+ `.csv.import` metadata + `UPSTREAM-LICENSE.txt`).
+- **GATE 0 facts:** header `key,description,en,zh,fr,pt,pl,ua,th,es`; **675 data rows**;
+  key + `description` context col + 8 locales (en/zh/fr/pt/pl/ua/th/es); comma-delimited.
+- **Licence — CC-BY-NC-SA 4.0 (loc content), NOT MIT.** Only `*.gd` code is MIT; all locales
+  (incl. Polish) + English narrative are CC-BY-NC-SA. Usable as gitignored, non-commercial,
+  test-only data (never ships, never enters `library/`). Marcin confirmed (open-questions Q0.2).
+- **Dropped at intake:** LocJAM 3 xlsx — turned out to be the board-game's printable maps
+  (sheets MAP 1/MAP 2/COUNTERS, 50 strings, no key/locale/char-limit columns), not a lockit.
+  Clone left at `sources/locjam3/` (gitignored; rm was denied — harmless).
+- **Char-limit column STILL UNTESTED** (deferred, Q0.3) — no verifiable clean source found by
+  three scouts. Revisit in a future dedicated hunt.
+- **GATE 1 cleared — vault written:** `structure.md`, `profile.md` (confirmed), `variables.md`,
+  `open-questions.md`. Anatomy: flat CSV 676×10; identity = `key` (`namespace:name`, ~24 ns,
+  **1 dup** `ui_label:heart`); `description` = context col + closed 4-tag DSL
+  (`[EMPTY]`/`[noun]`/`[verb]`/`[DEPRECATED]`), NOT a locale; 8 locales (`en` src, **`ua` ~half
+  untranslated**); **JSON-array cells** (30 keys/207 cells, length = cross-locale invariant);
+  placeholders `{0}`–`{3}` + literal `\n`; **no markup** (drift sweep clean); CSV quoting
+  exercised (631 comma / 287 quote cells, 0 embedded newlines).
+- **Library payoff:** ✅ `gettext-detection` (not gettext) · ✅ `markup-families` (none) · ✅
+  `cross-locale-invariants` ({N} + array-length) · ✅ `outlier-hunting` (dup key, variants, arrays)
+  · **gap:** no `csv-detection` recogniser + no CSV reader template → propose at `/retro`.
+- **GATE 2 cleared — toolkit built, tested, packaged (Marcin approved 2026-07-08).** 8
+  dependency-free scripts in `scripts/a-dark-forest/` (csv_parse, labels, report, inventory,
+  extract, arrays, validate, validate_placeholders) + tests; **31 tests pass**. Skill
+  `lockit-a-dark-forest-toolkit` packaged; `toolkit.md` indexes it.
+- **Real defects surfaced (report, don't fix):** 1 dup key (`ui_label:heart`); **3 malformed
+  `es` array cells** (`npc_event_options:cat_talk_A{1,2,3}` = `["?"],` stray comma — caught by
+  the toolkit, missed by manual GATE-1 scan); `ua` = only genuinely partial locale (256 active
+  untranslated; fr/pt/pl "untranslated" were all `[DEPRECATED]`).
+- **`/retro` DONE (2026-07-08).** Library promotions applied (Marcin approved all six):
+  new convention `csv-tabular`, heuristic `csv-detection`, template `csv_parse_template.py`;
+  updated `construct-origin-labeling` (origin `format` generalises `fluent`/`gettext`; +also_seen),
+  `outlier-hunting` (+also_seen), `cross-locale-invariants` (+array-length invariant, +also_seen).
+  Memory hardened: [[content-vs-code-licence]]. Session note `003-a-dark-forest-tabular-csv.md`
+  + kickoff written.
+- **NEXT SESSION — close the last gap: a lockit with a CHAR-LIMIT column** (exercises spec §7
+  `find_over_limit.py`, never yet built). Source 2–3 candidates → GATE 0. Fallbacks: Polyglot
+  (CC0, 25 locales+RTL) to stress the CSV toolkit; or licence/telemetry north-stars. See
+  `docs/next-session-kickoff.md`.
+
+---
 
 **Phase 6. Session 002 DONE — the generality test PASSED.** Two lockits now fully mapped +
 tooled: Wesnoth (gettext, 32 domains) and **Veloren (Fluent `.ftl`)** — different formats,

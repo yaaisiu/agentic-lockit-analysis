@@ -3,7 +3,7 @@ type: convention
 id: cross-locale-invariants
 status: accepted
 first_seen: wesnoth
-also_seen: [veloren]
+also_seen: [veloren, a-dark-forest]
 promoted_session: "001"
 ---
 
@@ -22,7 +22,14 @@ translation never carries it).
 **Invariants to enforce (per translated entry):**
 1. **Named placeholders** (`$var`, `{brace}`, `%(name)s`, `{0}`…): a translation must not
    **invent** a name absent from the source (`$num`→`$number` = misspelling, renders literal).
-   For a **non-plural** string it must not **drop** a source name either.
+   For a **non-plural** string it must not **drop** a source name either. (Tabular case,
+   a-dark-forest: positional `{0}`–`{N}` slots — compare the SET of indices, not their order.)
+5. **Positional-collection length** (added a-dark-forest, s003): when a cell holds a **list**
+   of interchangeable/tiered values (a JSON-array cell, e.g. `["Yes","No"]`, or Fluent `.aN`),
+   the translation must keep the **same element COUNT** as the source — dropping an option
+   breaks the engine's indexing. Check length (an always-valid invariant); leave per-element
+   **order** to human review, because the order rule is per-key (ordered tiers must align;
+   random-pick sets may reorder — same caution as the random-pick note below).
 2. **printf/positional specifiers** (`%d`, `%s`, `%1$s`): a translation must not introduce a
    specifier the source lacks (count/position sensitive).
 3. **Markup**: each translated form balances in its own family (see [[markup-families]]).

@@ -12,6 +12,7 @@ numbers always agree with them. Deterministic; safe to run on the slice or all 2
 import sys, collections
 import clausewitz_parse as P
 import labels as L
+import validate as V
 
 
 def report(arg):
@@ -35,8 +36,23 @@ def report(arg):
     print(f"║ parse      {len(lk.warnings)} malformed/multiline warnings")
     print(f"║ constructs " + "  ".join(f"{k}={con[k]}" for k, *_ in L.INLINE))
     print(f"╚═ drift     run `labels.py --audit {arg}` (tier-1 unknown must be 0)")
+
+    # --- completeness / integrity (source-side; no translation needed) ---
+    # For an English-source-only lockit there is no translation completeness to measure, so we
+    # report what CAN be judged from the source: structural coverage of events, and reference
+    # integrity ($OTHER_KEY$ pointing at a real key vs a dangling one). Dangling refs are defects.
+    ev = V.event_structure(lk)
+    no_title = sum(1 for parts in ev.values() if 'title' not in parts)
+    no_body = sum(1 for parts in ev.values() if 'body' not in parts)
+    resolved, engine, dangling = V.classify_references(lk)
+    partial = len(lk.files) < 10
+    print(f"\n── completeness / integrity (source-side) ──")
+    print(f"  events (namespace.id): {len(ev)}   missing title: {no_title}   missing body/desc: {no_body}")
+    print(f"  $VAR$ refs: {resolved} resolve to a key · {engine} engine values · "
+          f"{len(dangling)} dangling{' (PARTIAL set — cross-file refs inflate this; run on full corpus)' if partial else ''}"
+          f" (→ `validate.py --refs`)")
     if dups:
-        print(f"\n⚠ {len(dups)} duplicate keys (override candidates) — see validate.py --dups")
+        print(f"  ⚠ {len(dups)} duplicate keys (override candidates) — see `validate.py --dups`")
 
 
 if __name__ == '__main__':

@@ -44,6 +44,11 @@ active_lockit: hoi4
   variant keys**, NOT in-string selectors — `GetNameDef`/`GetAdjective` (~25k), `GetSheHe`/
   `GetHerHis` (~230), `_DEF`/`_ADJ`/`_plural` keys; **no plural system**. Opposite of gettext/
   Fluent. Real downstream limit for Polish. → generalised into heuristic `morphology-location`.
+- **Post-retro (2026-07-09): source-side completeness/integrity node added** (Marcin: "add a
+  completeness node"). `report.py` now reports event structural coverage + reference resolution;
+  `validate.py --refs` lists **dangling `$OTHER_KEY$` refs** (all 206: **40** real candidates incl.
+  typo `$sasebo_naval_arsenall$`; **245** events missing a title). Run `--refs` on the FULL corpus
+  (cross-file refs). Tests **41/41** (+6). Recorded in open-questions + toolkit.md.
 - **`/retro` DONE (2026-07-09). All 9 promotions approved by Marcin + applied:** NEW heuristics
   `clausewitz-detection`, `morphology-location`, `length-reference`; NEW convention
   `clausewitz-pdx-yaml` (per-game profile-as-data, HoI4 = first row); NEW template

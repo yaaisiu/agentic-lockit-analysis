@@ -20,9 +20,9 @@ Skill: **`lockit-hoi4-toolkit`** (`.claude/skills/lockit-hoi4-toolkit/SKILL.md`)
 | `labels.py` | origin registry (`format`/`project`/`unknown`) + two-tier `--audit` (drift / noted tail) | `python3 labels.py --audit ../../sources/hoi4` | ✅ 2026-07-09 |
 | `inventory.py` | construct census + `$VAR\|fmt$` + `[scope.fn]` sub-form breakdown | `python3 inventory.py ../../data/hoi4/en --samples 3` | ✅ 2026-07-09 |
 | `keys.py` | key-vocabulary catalogue: country tags, suffixes, event namespaces + part kinds (T-H3) | `python3 keys.py ../../data/hoi4/en` | ✅ 2026-07-09 |
-| `report.py` | one-screen "what we know" summary | `python3 report.py ../../sources/hoi4` | ✅ 2026-07-09 |
+| `report.py` | one-screen summary + source-side completeness/integrity node (event coverage, ref resolution) | `python3 report.py ../../sources/hoi4` | ✅ 2026-07-09 |
 | `extract.py` | select by file/namespace/tag/style; `--clean` = translatable text only | `python3 extract.py ../../data/hoi4/en --namespace germany --clean` | ✅ 2026-07-09 |
-| `validate.py` | structural (warnings, dup keys, colour balance, `\"` tail) + `--length-ref` (soft, E1) | `python3 validate.py ../../sources/hoi4 --dups` | ✅ 2026-07-09 |
+| `validate.py` | structural + `--refs` (reference integrity / dangling refs) + `--length-ref` (soft, E1) | `python3 validate.py ../../sources/hoi4 --refs` | ✅ 2026-07-09 |
 | `validate_placeholders.py` | prepared cross-locale token preservation ($var/[scope]/£icon/@flag) | `python3 validate_placeholders.py <en> <other>` | ✅ 2026-07-09 |
 | `tests/test_toolkit.py` | dual-mode tests (synthetic semantics + real census; incl. all-206 drift=0) | `python3 tests/test_toolkit.py` | ✅ 35 pass |
 
@@ -31,6 +31,13 @@ Skill: **`lockit-hoi4-toolkit`** (`.claude/skills/lockit-hoi4-toolkit/SKILL.md`)
 105,109 underscore / 23,978 dotted-event · version :N ∈ {0..4} · constructs: colour 19,754 ·
 icon 1,821 · flag 86 · variable 17,861 · scope-fn 31,068 · `\n` 12,152. NOTED tail: 25 unbalanced
 colour spans + 21 escaped `\"` (located by `validate.py`).
+
+## Source-side completeness / integrity (added s004, no translation needed)
+English is source-only → no translation completeness. `report.py` reports what the source shows:
+**event structural coverage** (all 206: **245** events missing a title, **130** missing body/desc)
+and **reference integrity** (`validate.py --refs`: **40** dangling `$OTHER_KEY$` candidates — real
+defects to review, incl. the typo `$sasebo_naval_arsenall$`). **Run `--refs` on the FULL corpus**
+— cross-file refs make a partial set report false danglers (slice shows 49 vs corpus 40).
 
 ## Prepared cross-locale tools
 `validate_placeholders.py` and `validate.py --length-ref` need a translation dir (we hold only

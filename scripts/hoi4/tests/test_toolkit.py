@@ -123,6 +123,30 @@ def mode1():
             flagged = validate.length_ref(en, tr, ratio=1.6)
         check("placeholder check catches DROPPED $GOLD$ (1 defect)", defects == 1)
         check("length-ref flags the long K2 translation", flagged >= 1)
+
+        # --- reference integrity: resolved / engine / dangling classification ---
+        rd = tempfile.mkdtemp(prefix='hoi4r_')
+        try:
+            write(os.path.join(rd, 'r_l_english.yml'),
+                  'l_english:\n'
+                  ' dam: "Dam"\n'
+                  ' dam_alias: "$dam$"\n'                      # resolved: $dam$ → key `dam`
+                  ' engine_use: "$VALUE$ men and $COUNTRY$"\n'  # engine values (ALL-CAPS)
+                  ' broken: "see $totally_missing_thing$"\n')   # dangling: lowercase, no such key
+            rlk = P.load(rd)
+            resolved, engine, dangling = validate.classify_references(rlk)
+            check("reference: $dam$ resolves to key `dam`", resolved == 1)
+            check("reference: ALL-CAPS $VALUE$/$COUNTRY$ = engine values", engine == 2)
+            check("reference: lowercase $totally_missing_thing$ = dangling",
+                  len(dangling) == 1 and dangling[0][1] == 'totally_missing_thing')
+            # event structure: an event with a title but no body
+            write(os.path.join(rd, 'e_l_english.yml'),
+                  'l_english:\n foo.1.t: "Title only"\n foo.2.t: "T"\n foo.2.desc: "Body"\n')
+            ev = validate.event_structure(P.load(rd))
+            check("event_structure: foo.1 has title, no body",
+                  ev[('foo', '1')] == {'title'} and 'body' in ev[('foo', '2')])
+        finally:
+            shutil.rmtree(rd, ignore_errors=True)
     finally:
         shutil.rmtree(d, ignore_errors=True)
 
@@ -147,6 +171,13 @@ def mode2():
         with contextlib.redirect_stdout(io.StringIO()):
             drift_all = L.audit(ALL206)
         check("all 206: tier-1 drift == 0 (registry recognises whole corpus)", drift_all == 0)
+        # reference integrity is only meaningful on the FULL corpus (cross-file refs)
+        all_lk = P.load(ALL206)
+        _res, _eng, dangling = validate.classify_references(all_lk)
+        check("all 206: 40 dangling reference candidates (defect list)", len(dangling) == 40)
+        ev = validate.event_structure(all_lk)
+        check("all 206: 245 events missing a title",
+              sum(1 for parts in ev.values() if 'title' not in parts) == 245)
     else:
         print("  -- note: sources/hoi4 not present, skipping 206-file audit")
 

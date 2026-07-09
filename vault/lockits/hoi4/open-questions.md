@@ -53,6 +53,18 @@ updated: 2026-07-09
   The answer predicts how much morphological control a translator has, and is inferable from the
   source locale alone. first_seen would cite wesnoth/veloren/hoi4 as the three contrasting points.
 
+## Source-side completeness / integrity findings (s004, added post-GATE-2) — report, don't fix
+Since HoI4 English is source-only (no translation to measure), the toolkit reports source-side
+completeness. Across all 206 files (via `report.py` / `validate.py --refs`):
+- **40 dangling `$OTHER_KEY$` reference candidates** — a `$name$` that looks like a key reference
+  (has lowercase) but matches no key. Real defects to review; e.g. `$sasebo_naval_arsenall$` (a
+  double-L typo of its own key `..._arsenall_...`), `$Australia$`, `$Scavenger$`, `$num$`. A few
+  are benign (e.g. `$RATIO%$`). **Must be computed on the FULL corpus** — cross-file refs make a
+  partial set over-count (slice = 49 false-inflated vs corpus = 40).
+- **Event structural coverage:** 245 events with no title part, 130 with no body/desc part (some
+  intentional — news/tooltip-only events — some likely defects). Surface for human review.
+- Third-party proprietary data → we **surface**, never edit.
+
 ## Tracked for toolkit / scale-up (Q3 confirmed) — status: open
 - **T-H1 — `--audit` across all 206:** enumerate the construct tail the slice misses — colour
   letters L/T/W/O/g/b/B, escaped `\"` (~21), any unknown `§`/`£`/`@`/`$…$`/`[…]`/`|fmt` forms.

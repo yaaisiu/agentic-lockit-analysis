@@ -24,6 +24,61 @@ import clausewitz_parse as P
 import labels as L
 from extract import clean_text
 
+# A $NAME$ token references ANOTHER loc key when NAME equals an existing key (e.g. $dam$ → key
+# `dam`). Engine-provided values are ALL-CAPS placeholders the game fills at runtime ($VALUE$,
+# $COUNTRY$, $NUM$…) — not loc keys, not dangling. So a $name$ that is NOT a key AND is NOT
+# all-caps (i.e. has a lowercase letter, like a real key would) is a DANGLING-reference candidate:
+# it looks like a key reference but resolves to nothing → a real, game-visible defect.
+_ENGINE_VAR = re.compile(r'^[A-Z][A-Z0-9_]*$')      # ALL-CAPS ⇒ engine-provided value, not a key ref
+_VAR_TOKEN  = re.compile(r'\$([^$|]+)(?:\|[^$]*)?\$')  # $NAME$ or $NAME|fmt$ → capture NAME
+
+
+def classify_references(lk):
+    """Split every $VAR$ into resolved (→ a real key), engine (ALL-CAPS value), dangling (looks
+    like a key ref but matches no key). Returns (resolved:int, engine:int, dangling:list[(entry,name)])."""
+    keys = set(lk.by_key())
+    resolved = engine = 0
+    dangling = []
+    for e in lk.entries:
+        for m in _VAR_TOKEN.finditer(e.value):
+            name = m.group(1)
+            if name in keys:
+                resolved += 1
+            elif _ENGINE_VAR.match(name):
+                engine += 1
+            else:
+                dangling.append((e, name))
+    return resolved, engine, dangling
+
+
+def event_structure(lk):
+    """(namespace,id) -> set of part-KINDS present, for dotted event keys (source-side coverage)."""
+    ev = collections.defaultdict(set)
+    for e in lk.entries:
+        if e.is_dotted:
+            ev[(e.namespace, e.event_id)].add(L.label_part(e.part)[0])
+    return ev
+
+
+def reference_integrity(arg):
+    """Report $VAR$ reference resolution and list dangling-reference candidates (real defects)."""
+    lk = P.load(arg)
+    resolved, engine, dangling = classify_references(lk)
+    print(f"REFERENCE INTEGRITY {arg}   ({len(lk.entries)} entries, {len(lk.files)} files)")
+    if len(lk.files) < 10:
+        print("  ⚠ run on the FULL corpus — a $key$ ref may target a key in another file; a partial")
+        print("    set reports false danglers (cross-file refs unresolved). This looks partial.")
+    print(f"  $VAR$ → resolved to a key: {resolved}   engine value (ALL-CAPS): {engine}   "
+          f"dangling candidates: {len(dangling)}\n")
+    # group dangling by name so a systemic broken ref is obvious
+    by_name = collections.Counter(name for _e, name in dangling)
+    first = {}
+    for e, name in dangling:
+        first.setdefault(name, f'{e.source_file.split("/")[-1]}:{e.line} {e.key}')
+    for name, c in by_name.most_common(40):
+        print(f"  ${name}$  ×{c}   first at {first[name]}")
+    return len(dangling)
+
 
 def structural(arg, show_dups=False):
     lk = P.load(arg)
@@ -83,6 +138,9 @@ if __name__ == '__main__':
         ratio = float(argv[argv.index('--ratio') + 1]) if '--ratio' in argv else 1.6
         pos = [a for a in rest if not a.startswith('--')]
         length_ref(pos[0], pos[1], ratio)
+    elif '--refs' in argv:
+        pos = [a for a in argv if not a.startswith('--')]
+        reference_integrity(pos[0] if pos else '../../data/hoi4/en')
     else:
         pos = [a for a in argv if not a.startswith('--')]
         structural(pos[0] if pos else '../../data/hoi4/en', show_dups='--dups' in argv)

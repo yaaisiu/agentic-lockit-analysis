@@ -248,11 +248,12 @@ cross-locale tools on a real translation) → A2/A3 → B1/B2 → F1 before C/D.
 3. **Telemetry & token/cost awareness.** Metering seam reserved in `schema.md` (design
    only so far). Wire it so each pipeline step can report calls/tokens/cost, enabling
    deliberate cheap-vs-expensive routing.
-4. **Public release.** Intended to be shared publicly under a licence that invites
-   others to pick up the idea. **Open decision — licence not yet chosen** (candidates:
-   Apache-2.0 for code + CC-BY-4.0 for docs; or MIT; or a source-available/ethical
-   licence). Decide before first public push. No client data ever ships (`data/**`,
-   `sources/**` gitignored).
+4. **Public release — licence DECIDED (2026-07-09): permissive open source.** Apache-2.0
+   (code) + CC-BY-4.0 (docs) + a README **courtesy note** (commercial use free; a request,
+   not a term, to hear about commercial products). Marcin's reasoning: the seed is
+   reproducible from the prompts, so a restrictive licence adds friction + false security.
+   **Next session executes the release** — see `docs/release-plan.md` + kickoff. No client
+   data ever ships (`data/**`, `sources/**` gitignored). Legal sanity-check advised pre-push.
 
 ## Hard gates (never pass without Marcin's confirmation)
 - **GATE 0** — confirm which located files are the lockit (Mode B intake).

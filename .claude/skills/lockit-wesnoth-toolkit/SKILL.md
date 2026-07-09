@@ -44,9 +44,12 @@ scripts — reproducible, free, testable. Each script has a plain-language *why*
   keep markup balanced, and supply the locale's `nplurals` forms. (Prints strings — local use.)
 - `python3 scripts/wesnoth/report.py <file...> [--json]` — coverage snapshot ("what we know /
   what we don't") to read against `profile.md`.
+- `python3 scripts/wesnoth/completeness.py <po-file-or-dir>` — **translation completeness** per
+  domain/language: translated / fuzzy / untranslated (fuzzy ≠ done; a plural is done only when
+  every form is filled). Needs `.po` translations, not `.pot`.
 
 ## Tests
-`python3 scripts/wesnoth/test_toolkit.py` (or `pytest scripts/wesnoth/`) — **21 tests**.
+`python3 scripts/wesnoth/test_toolkit.py` (or `pytest scripts/wesnoth/`) — **22 tests**.
 Synthetic fixtures (no lockit content) + an optional real-`.pot` integration check that skips
 if data is absent.
 

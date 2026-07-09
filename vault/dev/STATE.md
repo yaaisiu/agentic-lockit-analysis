@@ -223,6 +223,15 @@ Marcin's approval (see below). See `docs/next-session-kickoff.md`.
 - **CLAUDE.md pointer to memory-policy + why-docs — APPLIED** (session 000 retro). No
   cornerstone changes pending.
 
+## Completeness node added (2026-07-09, Marcin: "add a completeness node / missing reports")
+- **HoI4 (source-side):** `report.py` completeness node + `validate.py --refs` — 40 dangling
+  `$OTHER_KEY$` refs, 245 events missing a title (all 206). See the HoI4 section above.
+- **Wesnoth (the missing translation-completeness report):** the s000 sparse clone was still on
+  disk (1,922 `.po`, no re-clone needed) → copied **de + pl** for the 4 domains into gitignored
+  `data/wesnoth/po/<lang>/`; added `scripts/wesnoth/completeness.py` (translated/fuzzy/untranslated,
+  plural-aware). **German 100%; Polish 89.2%** (lib 80.2%, units 73.2%; 313 fuzzy). Wesnoth tests
+  21→22. Indexed in wesnoth `toolkit.md` + SKILL. (Veloren + A Dark Forest already had completeness.)
+
 ## Backlog (bigger-picture direction)
 See `vault/dev/backlog.md` — Marcin's product vision parked durably: translator/loc-specialist QA
 (Theme A, near-term), knowledge graph (B), embeddings/semantic search+clustering (C), NL Q&A (D),

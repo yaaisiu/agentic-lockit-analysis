@@ -24,7 +24,7 @@ except ImportError:                   # minimal shim so `python test_toolkit.py`
         mark = _Mark()
     pytest = _P()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import po_parse, po_tokens, validate_markup, validate_placeholders as vph
+import po_parse, po_tokens, validate_markup, validate_placeholders as vph, completeness
 from list_context_prefixes import family as prefix_family
 
 HEADER = 'msgid ""\nmsgstr ""\n"Content-Type: text/plain; charset=UTF-8\\n"\n'
@@ -278,6 +278,22 @@ def test_real_counts():
             S = po_parse.strings(po_parse.parse_file(path))
             assert len(S) == n
             assert len({r["internal_id"] for r in S}) == n   # ids unique
+
+
+def test_completeness_entry_state(tmp_path):
+    """translated / untranslated / fuzzy / half-filled-plural classification (synthetic)."""
+    po = (HEADER +
+          '\nmsgid "Done"\nmsgstr "Fertig"\n'                        # translated
+          '\nmsgid "Todo"\nmsgstr ""\n'                              # untranslated
+          '\n#, fuzzy\nmsgid "Guess"\nmsgstr "Vermutung"\n'          # fuzzy (not done)
+          '\nmsgid "one apple"\nmsgid_plural "%d apples"\n'
+          'msgstr[0] "ein Apfel"\nmsgstr[1] ""\n')                   # half-filled plural → untranslated
+    f = tmp_path / "d.po"; f.write_text(po, encoding="utf-8")
+    recs = po_parse.strings(po_parse.parse_file(str(f)))
+    states = sorted(completeness.entry_state(r) for r in recs)
+    assert states == ['fuzzy', 'translated', 'untranslated', 'untranslated'], states
+    total, c = completeness.report_file(str(f))
+    assert total == 4 and c['translated'] == 1 and c['fuzzy'] == 1 and c['untranslated'] == 2
 
 
 # ---------- dependency-free runner (used when pytest isn't installed) ----------

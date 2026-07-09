@@ -2,7 +2,7 @@
 type: lockit-toolkit
 lockit: wesnoth
 skill: lockit-wesnoth-toolkit
-updated: 2026-07-02
+updated: 2026-07-09
 ---
 
 # Wesnoth — toolkit index (how & why)
@@ -37,7 +37,19 @@ po4a markup families, `{brace}` + hex-entity classes, refined `$var`, and the cr
 | `validate_markup.py` | **per-family** balance (Pango/DocBook/po4a) + stray `\`; **ERROR** (structural) vs **WARN** (unescaped `&`-in-markup) | `… validate_markup.py sources/wesnoth/po/*/*.pot` | ✅ 0 error, 1 warn, 0 FP |
 | `validate_placeholders.py` | **cross-locale** consistency: `$var`/`{brace}`/printf/markup/plural-arity, source vs a translation `.po` | `… validate_placeholders.py …/wesnoth-lib.pot …/wesnoth-lib/de.po` | ✅ 8 real defects on de/pl |
 | `report.py` | coverage snapshot ("what we know / don't") | `… report.py sources/wesnoth/po/*/*.pot` | ✅ |
-| `test_toolkit.py` | dual-mode tests (pytest or plain python) | `python3 scripts/wesnoth/test_toolkit.py` | ✅ **21 passed** |
+| `completeness.py` | **translation completeness** per domain/language (translated / fuzzy / untranslated; plural = done only if all forms filled) | `… completeness.py data/wesnoth/po/pl` | ✅ synthetic + real de/pl |
+| `test_toolkit.py` | dual-mode tests (pytest or plain python) | `python3 scripts/wesnoth/test_toolkit.py` | ✅ **22 passed** |
+
+## Translation completeness (added s004 — the report Wesnoth was missing)
+The English `.pot` profiling never measured *translation* completeness (needs the `.po`). Added
+`completeness.py`; ran it on **de + pl** for the 4 profiled domains (copied from the s000 sparse
+clone into gitignored `data/wesnoth/po/<lang>/`). Result:
+- **German: 100%** across all 4 domains (5,258 strings) — a fully-maintained locale.
+- **Polish: 89.2%** overall — but real gaps: `wesnoth` + `wesnoth-httt` = 100%, **`wesnoth-lib`
+  80.2%** (160 fuzzy + 173 untranslated), **`wesnoth-units` 73.2%** (153 fuzzy + 82 untranslated).
+  **313 fuzzy** strings a naive count would wrongly call "done" — hence the fuzzy split matters.
+Surface, don't fix (upstream GPL). Confirms the "completeness node" value: it turns "is this
+language done?" into per-domain numbers with the fuzzy trap made explicit.
 
 ## Validated facts — corpus-wide (`report.py`, all 32 domains, session 001)
 - **26,312 strings; internal ids 26,312/26,312 unique; 0 collisions** — the GATE 1 identity

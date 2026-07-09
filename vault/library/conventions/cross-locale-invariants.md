@@ -3,7 +3,7 @@ type: convention
 id: cross-locale-invariants
 status: accepted
 first_seen: wesnoth
-also_seen: [veloren, a-dark-forest]
+also_seen: [veloren, a-dark-forest, hoi4]
 promoted_session: "001"
 ---
 
@@ -57,6 +57,17 @@ translation never carries it).
 **Severity:** placeholder invent/drop, extra printf, broken markup, wrong plural arity →
 report; but remember the tool **surfaces** defects — when the data is third-party/upstream
 (e.g. GPL translations), we do not fix it, we report it.
+
+**Engine-delegated formats — token preservation is the real invariant (added hoi4, s004):** when
+a format delegates morphology to engine functions rather than in-string selectors
+([[morphology-location]]), **plural arity is meaningless** (there are no plural forms to count).
+The invariant that matters is the **multiset of machine-readable tokens** the translation must
+preserve. For Clausewitz ([[clausewitz-pdx-yaml]]): `$VAR$` variables, `[scope.fn]` data
+functions, `£icon` icons, `@TAG` flags — a translation that DROPS or INVENTS one breaks rendering.
+Normalise `$VAR|fmt$` on the **name only** (drop `|fmt`), so a legitimate colour/number-format
+change isn't a false positive but a dropped variable still is. Colour codes (`§`) and `\n` are
+**advisory** (formatting can legitimately shift). Same "surface, don't fix" rule on proprietary/
+upstream data.
 
 **Scope note:** this is a *translation-phase* capability. When the current focus is the
 **source** (English) analysis, build + test the checker as a prepared tool and run it in

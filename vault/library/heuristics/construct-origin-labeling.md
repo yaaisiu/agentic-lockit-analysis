@@ -3,7 +3,7 @@ type: heuristic
 id: construct-origin-labeling
 status: accepted
 first_seen: veloren
-also_seen: [a-dark-forest]
+also_seen: [a-dark-forest, hoi4]
 promoted_session: "002"
 ---
 
@@ -50,6 +50,26 @@ context vs identity), the **context-column tag DSL** (`[EMPTY]`/`[noun]`/…), *
 (scalar/array/empty), and **key-embedded constructs** (`-N` variant, `X` template slot) — with a
 `--audit` that re-checks every run that no hidden markup/token crept in (0 unknown on the corpus).
 
+**Two-tier drift audit (refinement, hoi4 s004):** a flat "unknown bucket" over-flags when a
+construct space has an **expected but rare tail**. Split the audit into two tiers so
+"unknown: 0" stays meaningful:
+- **Tier 1 — DRIFT (fail):** genuinely foreign syntax that should NOT exist → nonzero = a real
+  surprise. (HoI4: an escape beyond `\n`/`\t`, a colour letter outside the known set, a CK3-style
+  `#…#!` span in an old-style file, a `{brace}`.) Wire the test/exit code to THIS.
+- **Tier 2 — NOTED (report, don't fail):** real, expected-rare patterns worth surfacing but not
+  drift. (HoI4: the ~21 escaped `\"`; colour spans that don't balance within one string because
+  the colour is closed after a `$VAR$` concatenation.) List them with locations; don't count them
+  as unknown.
+Also: some vocabularies are **semi-open by design** — classify them into KINDS and never flag
+them as drift. (HoI4 event-key `part`s: a closed core `t`/`desc`/options/`tt` **plus** open-ended
+NAMED conditional variants writers invent, e.g. `keep_leader`, `desc.baltics` — expected, origin
+`project`; catalogue their distribution rather than flagging each.)
+
+**Origin `format` per family:** for Clausewitz ([[clausewitz-pdx-yaml]]) the `format`-origin
+constructs are `§X`/`§!`, `£icon`, `@TAG`, `$VAR$`/`$VAR|fmt$`, `[scope.fn]`, `\n`/`\t`; the event
+`part` meanings + key tag/suffix vocab are `project`. Verified: tier-1 drift = 0 across all 206
+HoI4 files / 129,087 entries.
+
 **Companion:** pairs naturally with [[outlier-hunting]] (actively look for the unexpected) and
-with any format convention ([[fluent-ftl]], [[gettext-po]], [[csv-tabular]]) whose constructs get
-labeled.
+with any format convention ([[fluent-ftl]], [[gettext-po]], [[csv-tabular]], [[clausewitz-pdx-yaml]])
+whose constructs get labeled.

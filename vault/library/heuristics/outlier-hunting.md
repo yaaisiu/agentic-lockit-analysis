@@ -3,7 +3,7 @@ type: heuristic
 id: outlier-hunting
 status: accepted
 first_seen: veloren
-also_seen: [a-dark-forest]
+also_seen: [a-dark-forest, hoi4]
 promoted_session: "002"
 ---
 
@@ -49,3 +49,12 @@ broken into scalar, which the *manual* scan missed but the strict parser caught)
 **active-vs-deprecated** completeness distinction (most "untranslated" cells were `[DEPRECATED]`
 rows; only one locale was genuinely partial). Confirms: outliers hide in value-shape corruption
 and in status columns, not just key names.
+
+**Also seen (hoi4, s004, Clausewitz pseudo-YAML):** a **slice under-samples the construct space** —
+the 5-file slice showed only colour letters Y/R/G/H, but the full 206 files also use L/T/W/O/g/b/B;
+run the outlier/drift pass on the WHOLE corpus, not a sample. The pass surfaced: an **escape tail**
+(`\t` beyond `\n`; 21 escaped `\"`), **colour spans that don't balance within one string**
+(colour opened in one key and closed after a `$VAR$` interpolation — a real cross-string pattern,
+not always a defect), and a **semi-open key vocabulary** (event `part`s: a closed core plus
+open-ended named conditional variants). Confirms: probe the full set for the rare tail, and
+recognise when a vocabulary is *designed* to be open (classify into kinds, don't flag each).

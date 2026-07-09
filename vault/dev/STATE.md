@@ -1,11 +1,61 @@
 ---
 type: dev-state
-updated: 2026-07-07
+updated: 2026-07-08
 phase: 6
-active_lockit: a-dark-forest
+active_lockit: hoi4
 ---
 
 # STATE — you are here
+
+## Active — HoI4 (Clausewitz pseudo-YAML) — GATE 0 + GATE 1 CLEARED, 2026-07-09 (session 004)
+- **First proprietary/NDA-class lockit.** Files pre-staged in `sources/hoi4/` (gitignored; 206
+  loose English `.yml`, 129,087 entries, all `l_english`, UTF-8-BOM). Gitignore discipline
+  verified load-bearing via `git check-ignore`. **Vault notes are committed → synthetic examples
+  only, no real strings; real content lives in the gitignored `data/hoi4/gate1-review.md`.**
+- **GATE 0 (Marcin confirmed): 5-file slice** in `data/hoi4/en/`, chosen from **measured construct
+  density** (not guessed): `focus` (version-int 97%), `events` ([scope]+\n densest), `decisions`
+  (£icon), `game_rules` (@TAG carrier), `countries` (plain baseline). **12,867 entries ≈10%.**
+- **GATE 1 CLEARED — structure confirmed, vault written** (`profile.md` confirmed, `structure.md`,
+  `variables.md`, `open-questions.md`). Anatomy: line-regex `KEY:[VER] "VALUE"` (field-guide regex
+  matched **100%**, 0 malformed/multi-line/dup); **two key styles** (underscore `<TAG>_<ideology>_DEF`
+  + dotted event `namespace.id.part`); OLD-style dialect `§X…§!` / `£icon` (no closing £!) / `@TAG`
+  / `$VAR|fmt$` / `[scope.fn]` (4 sub-forms) / `\n`; **unescaped inner `"`** (greedy first→last
+  extraction, lossless); identity = key.
+- **Two GATE-1 "look closer" items resolved empirically (all 206):** `$VAR|fmt$` `|` is a **format
+  spec (colour AND number-format)**, not colour-only; `KEY:N` is a **version counter** (values
+  {0..4}, no key has two Ns), not a selector. Marcin idea E1: **length-ref** (localised vs source
+  length) for limit-less lockits → build into validate, propose at /retro.
+- **Library payoff:** ✅ `gettext-detection`→not gettext · ✅ `csv-detection`→not csv · reader
+  templates (po/ftl/csv) don't fit → **new line-regex reader needed**. Gap: no `clausewitz-detection`
+  recogniser, no clausewitz convention/template → propose at /retro (kickoff plan).
+- **GATE 2 CLEARED — toolkit built, tested, packaged (Marcin approved 2026-07-09).** 8
+  dependency-free scripts in `scripts/hoi4/` (clausewitz_parse, labels, inventory, keys, report,
+  extract, validate[+`--length-ref`], validate_placeholders) + dual-mode tests; **35 tests pass.**
+  Skill `lockit-hoi4-toolkit` packaged; `toolkit.md` indexes it. **Scaled to all 206** (129,087
+  entries): 0 dup keys (T-H2), 0 parse warnings, **tier-1 drift = 0** (registry recognises the
+  whole corpus, T-H1); NOTED tail = 25 unbalanced colour spans + 21 escaped `\"`. Key catalogue
+  (T-H3): 374 country tags, suffix vocab (`_DEF`/`_ADJ`/`_desc`…), 41 event namespaces, part kinds.
+  Design: two-tier audit (drift vs noted); event parts = semi-open vocab (never drift); prepared
+  cross-locale tools (`validate_placeholders`, `--length-ref`) run when given a translation.
+- **NOW — using the skill to answer Marcin's question:** how does HoI4 handle plurals + gender/
+  case inflection? (likely via engine `[scope.Get*]` functions + `_DEF`/`_ADJ` variant keys, not
+  in-string selectors — investigating with inventory/keys.)
+- **Q-INFL answered (Marcin's question):** HoI4 **delegates morphology to engine functions +
+  variant keys**, NOT in-string selectors — `GetNameDef`/`GetAdjective` (~25k), `GetSheHe`/
+  `GetHerHis` (~230), `_DEF`/`_ADJ`/`_plural` keys; **no plural system**. Opposite of gettext/
+  Fluent. Real downstream limit for Polish. → generalised into heuristic `morphology-location`.
+- **`/retro` DONE (2026-07-09). All 9 promotions approved by Marcin + applied:** NEW heuristics
+  `clausewitz-detection`, `morphology-location`, `length-reference`; NEW convention
+  `clausewitz-pdx-yaml` (per-game profile-as-data, HoI4 = first row); NEW template
+  `clausewitz_parse_template.py` (verified on all 206); updated `construct-origin-labeling`
+  (+two-tier drift audit, +semi-open-vocab), `cross-locale-invariants` (+token-preservation
+  invariant), `outlier-hunting` (+slice-under-sampling) — all +also_seen hoi4. Memory hardened:
+  [[proprietary-vault-discipline]]. Session note `004-hoi4-clausewitz-proprietary.md` + kickoff written.
+- **NEXT SESSION — Marcin's call.** Options in kickoff: (a) the deferred **char-limit hunt** (the
+  one untested §5 anatomy); (b) a new differently-structured lockit (JSON/`.arb`/`.strings`/xliff)
+  to keep testing library speed-up; (c) run the prepared HoI4 cross-locale tools on a real
+  translation locale; (d) start the downstream **Polish audit** track (morphology-location makes
+  HoI4 a sharp test case). No gate is mid-flight.
 
 ## Active — A Dark Forest (Godot CSV, TABULAR) — GATE 0 + GATE 1 cleared, 2026-07-07 (session 003)
 - **The deliberate gap:** first genuinely **tabular** lockit — explicit key column, context

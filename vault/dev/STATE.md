@@ -218,6 +218,13 @@ Marcin's approval (see below). See `docs/next-session-kickoff.md`.
 - **CLAUDE.md pointer to memory-policy + why-docs — APPLIED** (session 000 retro). No
   cornerstone changes pending.
 
+## Backlog (bigger-picture direction)
+See `vault/dev/backlog.md` — Marcin's product vision parked durably: translator/loc-specialist QA
+(Theme A, near-term), knowledge graph (B), embeddings/semantic search+clustering (C), NL Q&A (D),
+UI/explorer (E), foundations incl. telemetry (F). Principle: deterministic core stays source of
+truth; graph/embeddings/NL are a semantic LAYER on top. Suggested first: A1 (run the prepared
+cross-locale tools on a real translation) → A2/A3 → B1/B2 → F1 before C/D.
+
 ## North-star goals (design toward; raise at decision points)
 1. **Cheaper models can do the job.** Profiles, conventions, and library must be
    explicit, deterministic, model-agnostic — the scripts carry the load, the model

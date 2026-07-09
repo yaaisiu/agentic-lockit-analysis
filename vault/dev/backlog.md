@@ -1,0 +1,81 @@
+---
+type: dev-backlog
+updated: 2026-07-09
+---
+
+# Backlog — where Lockit Cartographer could go
+
+Ideas parked here so they survive the chat (per [[memory-policy]]). **Not commitments** — a menu
+Marcin prioritises from. Content-free (no lockit strings). Each item notes rough size and how it
+sits against the north-stars in [[STATE]]. Guiding principle unchanged: **the deterministic core
+is the source of truth; graph / embeddings / NL are a SEMANTIC LAYER on top, not a replacement.**
+"Discover with the model, extract with scripts" extends — graph edges & metadata are extracted
+deterministically; embeddings are computed once and cached; NL answers read the durable artifacts.
+
+## Theme A — Translator / loc-specialist value (near-term, deterministic, extends the toolkit)
+The toolkit is already a loc-QA engine; most of this is small deltas on what exists.
+- **A1. Run the prepared cross-locale tools for real.** Pull a translation locale (e.g.
+  `_l_polish.yml`) into gitignored `data/<lockit>/<lang>/`, run `validate_placeholders.py`
+  (token preservation) + `validate.py --length-ref`. First real "our tool caught a bug" report.
+  *(S; highest near-term value.)*
+- **A2. Completeness / coverage mode** — per-locale untranslated count, active vs deprecated,
+  % done, gaps list. *(S.)*
+- **A3. Morphology-awareness flags** — surface strings where the format can't express
+  agreement (counted `$VAR$` + noun, gender-free contexts) so a translator into an inflected
+  language is told "phrase neutrally / no case control here." Falls out of [[morphology-location]].
+  Includes a "plural-workaround finder" (the `(s)` hack, hand-written singular/plural key pairs). *(M.)*
+- **A4. Consistency checks** — same source string translated two different ways; glossary/term
+  consistency. Deterministic (exact/normalised) now; semantic (near-match) is Theme C. *(M.)*
+- **A5. Change/drift diff between deliveries** — what keys/strings/constructs changed since the
+  last build (uses the version integer + key/value diff). Pairs with the `--audit` drift catcher. *(M.)*
+- **A6. Context surfacing for translators** — for each string, expose its namespace / UI surface /
+  key role / referenced keys, so the translator has context and mistranslates less. *(M; feeds Theme B.)*
+
+## Theme B — Knowledge graph of a lockit
+Model the lockit as a graph and query relationships. Much of it is deterministically extractable.
+- **B1. Deterministic graph first.** Nodes: string, key, namespace, file, locale, construct,
+  referenced-key. Edges: key→references ($VAR$ / `[scope]` key refs — extractable now), shared
+  token, same namespace, source↔translation, deprecated-of. *(M–L.)*
+- **B2. Reference resolution** — resolve `$OTHER_KEY$` / `[scope.fn]` targets into edges; detect
+  dangling references (a `$VAR$` pointing at a missing key = a real defect). *(M.)*
+- **B3. Graph queries / export** — "what references this term", "all strings on this UI surface",
+  impact analysis ("if I change this key, what breaks"). Export to a standard graph format. *(M.)*
+- Semantic edges (similar-meaning, same-topic) come from Theme C.
+
+## Theme C — Embeddings / semantic layer
+A NEW capability class (fuzzy/semantic) complementing the deterministic core. Compute once, cache.
+- **C1. Semantic search** — "find all strings about naval supply" in natural language. *(M.)*
+- **C2. Clustering** — group strings by topic / tone / UI surface; surface structure the key
+  namespaces don't capture. *(M.)*
+- **C3. Near-duplicate & inconsistency detection** — semantically-identical sources translated
+  differently; terminology drift. (Deterministic A4 catches exact; C3 catches fuzzy.) *(M.)*
+- **C4. Terminology / glossary extraction** — mine recurring terms + their translations. *(M.)*
+- Design notes: pick an embedding model (cost/quality — ties to north-star #3 telemetry); embeddings
+  of proprietary strings are DERIVED DATA — treat with the same gitignore discipline as the source.
+
+## Theme D — Natural-language Q&A over lockit + docs
+- **D1. RAG over the vault docs + toolkit outputs + (gitignored) lockit data** — answer questions
+  like the gender/plural one, but productised and repeatable. Reads the deterministic artifacts +
+  the semantic index; cites keys/notes. *(L.)*
+- Fits north-star #1 (cheaper models read the chart) and #2 (portable to an API runner).
+
+## Theme E — UI / navigation
+- **E1. Lockit explorer** — browse strings + their documentation, navigate the graph, run toolkit
+  queries, view clusters, see coverage. (Obsidian already gives a partial doc-UI via the vault; a
+  dedicated explorer is the bigger ask.) *(L.)*
+- **E2. Translator-facing view** — per-string: source, context, constructs to preserve, morphology
+  warnings, length budget — the "workbench" a loc specialist would actually use. *(L.)*
+
+## Theme F — Foundations / cross-cutting (mostly north-stars, some gating the above)
+- **F1. Telemetry & cost seam (north-star #3)** — wire the reserved `telemetry` block so each step
+  reports calls/tokens/cost. **Prerequisite** for C/D (embedding + LLM cost must be measurable). *(M.)*
+- **F2. API-runner portability (north-star #2)** — lift the pipeline out of interactive Claude Code. *(L.)*
+- **F3. Public-release licence decision (north-star #4)** — still open; decide before first push. *(S.)*
+- **F4. Char-limit anatomy gap** — the one untested §5 column; needs a source hunt. `length-ref`
+  is only the soft substitute. *(S–M, opportunistic.)*
+
+## Suggested near-term order (Marcin decides)
+1. **A1** (run prepared cross-locale tools on a real translation) — proves translator value now.
+2. **A2 + A3** (coverage + morphology flags) — cheap, high loc-specialist value.
+3. **B1/B2** (deterministic graph + reference resolution) — foundation for D/E, no LLM cost.
+4. **F1** (telemetry) before **C/D** (embeddings + NL Q&A add real cost that must be measured).

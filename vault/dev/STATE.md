@@ -11,7 +11,9 @@ active_lockit: none
 **Not a lockit session — polish-and-publish.** Worked `docs/release-plan.md` top-to-bottom; all
 three tracks done, committed, and **pushed to the private GitHub repo
 `git@github.com:yaaisiu/agentic-lockit-analysis`** (Marcin authorized the push). Tag
-`seed-v1-original` pushed too. **Repo is STILL PRIVATE** — public flip is pending Marcin's legal check.
+`seed-v1-original` pushed too. **Repo was flipped PUBLIC on 2026-07-10 (s006)** after Marcin's
+go-ahead + a clean final pre-flight (see north-star #4). *(At end of s005 it was still private, pending
+his legal check.)*
 - **Track 1 — legal/safety gate.** Pre-flight re-verified (history clean, no PII/paths, client data
   gitignored). Content-licence audit: the one real CC-BY-NC-SA fragment (`"Writing & Narrative"` in
   a-dark-forest `profile.md`) scrubbed to synthetic; HoI4 notes confirmed synthetic. Added `LICENSE`
@@ -286,7 +288,12 @@ cross-locale tools on a real translation) → A2/A3 → B1/B2 → F1 before C/D.
 3. **Telemetry & token/cost awareness.** Metering seam reserved in `schema.md` (design
    only so far). Wire it so each pipeline step can report calls/tokens/cost, enabling
    deliberate cheap-vs-expensive routing.
-4. **Public release — licence DECIDED (2026-07-09): permissive open source.** Apache-2.0
+4. **Public release — DONE (2026-07-10): repo is now PUBLIC.** Flipped
+   `yaaisiu/agentic-lockit-analysis` to public after Marcin's go-ahead + a clean final pre-flight
+   (no client data tracked or in history — only `.gitkeep`; no PII/paths; all release artifacts
+   present). Added 10 discoverability topics (localization, game-localization, claude-code,
+   ai-agents, …). Next: Marcin posts to LinkedIn for traction. Licence — permissive open source:
+   Apache-2.0
    (code) + CC-BY-4.0 (docs) + a README **courtesy note** (commercial use free; a request,
    not a term, to hear about commercial products). Marcin's reasoning: the seed is
    reproducible from the prompts, so a restrictive licence adds friction + false security.

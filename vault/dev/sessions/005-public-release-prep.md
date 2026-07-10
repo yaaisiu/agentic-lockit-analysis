@@ -60,6 +60,7 @@ distinction as a prominent Quickstart callout (it had been a buried parenthetica
 ## Open threads
 
 - **Public flip pending Marcin's legal check** — outward + irreversible; his call.
+  *(UPDATE 2026-07-10, s006: flipped PUBLIC after Marcin's go-ahead — see STATE.md.)*
 - Deferred lockit work still parked: char-limit hunt, a new format, cross-locale on a real
   translation (A1), the Polish-audit track.
 - F5/F6 security hardening unstarted (documented only).

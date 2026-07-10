@@ -98,8 +98,8 @@ A NEW capability class (fuzzy/semantic) complementing the deterministic core. Co
   reports calls/tokens/cost. **Prerequisite** for C/D (embedding + LLM cost must be measurable). *(M.)*
 - **F2. API-runner portability (north-star #2)** — lift the pipeline out of interactive Claude Code. *(L.)*
 - **F3. Public-release licence — DECIDED + EXECUTED (s004/s005).** Apache-2.0 (code) + CC-BY-4.0
-  (docs) + a README courtesy note; repo pushed to a private GitHub remote; **public flip pending
-  Marcin's legal sanity check.** *(done.)*
+  (docs) + a README courtesy note; **repo flipped PUBLIC 2026-07-10 (s006)** after Marcin's legal
+  sanity check. *(done.)*
 - **F4. Char-limit anatomy gap** — the one untested §5 column; needs a source hunt. `length-ref`
   is only the soft substitute. *(S–M, opportunistic.)*
 - **F5. Prompt-injection awareness + defence (security foundation).** Lockit content is *untrusted
@@ -129,6 +129,18 @@ A NEW capability class (fuzzy/semantic) complementing the deterministic core. Co
   (input hardening ↔ output verification) and the *trusted-skills-only* principle; an API runner
   (north-star #2) must carry the same gate without the harness's permission floor. *(S for the
   linter + checklist; M for the sandbox + subagent.)*
+- **F7. Doc-freshness / repo-truth consistency (docs must match reality).** Prose notes drift from
+  the live state of the repo — s006 caught STATE/kickoff/backlog/session-005 still claiming the repo
+  was *private* hours after it was flipped public. The failure mode: a fact recorded across several
+  notes changes, but only some notes get updated. **Cheap first cut (do at `/retro`):** a short
+  reconciliation checklist for the handful of facts that have a machine-checkable ground truth —
+  repo visibility (`gh repo view --json visibility`), pushed-vs-local (`git status`/ahead-behind),
+  release artifacts present, current phase/active-lockit in STATE vs what actually happened. **Later
+  (S):** a deterministic `scripts/` freshness-check that greps the vault for a small set of
+  stale-claim patterns (e.g. "STILL PRIVATE", "pending … flip") and diffs asserted facts against
+  `gh`/`git`, emitting a warning list — run it in `/wake` and `/retro`. Distinguish **live-state
+  files** (STATE, kickoff, backlog — must always be current) from **session logs** (historical —
+  annotate with a dated forward-pointer, never rewrite). *(S; hygiene, high signal-to-noise.)*
 
 ## Theme G — Deliverable / QA generators (deterministic outputs that help the process)
 Small, deterministic tools that turn the chart + toolkit into artifacts a vendor/translator actually

@@ -9,7 +9,7 @@
 > + Clausewitz field guide published, backlog F5/F6 (security). Pushed to a PRIVATE GitHub repo.**
 
 ## Where we are
-- **Repo is on GitHub but PRIVATE:** `git@github.com:yaaisiu/agentic-lockit-analysis` (main + tag
+- **Repo is PUBLIC** (flipped 2026-07-10, s006): `git@github.com:yaaisiu/agentic-lockit-analysis` (main + tag
   `seed-v1-original` pushed). Release artifacts all in place: `LICENSE` (Apache-2.0), `LICENSE-docs.md`
   (CC-BY-4.0), `ATTRIBUTION.md`, rewritten `README.md`, `docs/clausewitz-loc-field-guide.md`.
 - **The one thing standing between here and public: Marcin's ~30-min legal sanity check.** Publishing

@@ -56,6 +56,21 @@ It runs in an **agentic coding harness**. [Claude Code](https://claude.com/claud
 
 ---
 
+## How it remembers and improves over time
+
+The system's memory is **files, not chat** — a repo of Markdown notes plus the generated scripts, all in git. The conversation is disposable; the files are the record. That's what lets each session pick up exactly where the last left off, and what lets the system get *better* at unfamiliar files instead of starting cold every time.
+
+**The session rhythm.** A session opens with **`/wake`**: the agent re-orients by reading the cornerstone (`CLAUDE.md`), the current state, the active file's notes, and the library — so it knows precisely where things stand. It closes with **`/retro`**: the agent consolidates what was learned — it proposes promotions to the library, writes a dated session note, and leaves a *next-session kickoff* so the following session resumes cleanly. Nothing important is left living only in the chat.
+
+**Two learning loops, both written to disk and git-tracked:**
+
+- **From the human (corrections at the gates).** Every time you confirm or correct at GATE 0/1/2, the decision lands in that file's `open-questions.md`; when it reflects a general truth, it's distilled into a library **convention** or **heuristic** — so the same question isn't asked twice, and the next file benefits.
+- **From the process (recurring patterns).** Structures that show up across files, and scripts that prove reusable, are **promoted** into the cross-file [library](vault/library/): conventions, detection heuristics, and script templates. Before profiling anything new, the agent **consults the library first** — recognise before re-inferring.
+
+Both loops are strictly **proposed → human-approved → applied**, each promotion committed citing the file and session that produced it. The system **never silently rewrites its own rules, library, or cornerstone.** That guardrail is the whole point: it gets sharper *with* you, in the open — not behind your back. After four worked files the library already carries format recognisers, reader templates, and an origin-labeling + drift-audit pattern, so the fifth file is largely *recognised* rather than figured out from scratch.
+
+---
+
 ## What it's for (and what it isn't)
 
 **It turns an unknown loc file into a documented, queryable, tool-equipped dataset** — the foundation you need *before* you can reliably translate or audit anything. On top of that foundation, the same deterministic tools already deliver real **localisation-QA** outcomes, demonstrated on the four examples below:

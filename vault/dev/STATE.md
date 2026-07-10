@@ -7,6 +7,29 @@ active_lockit: none
 
 # STATE — you are here
 
+## s006 — WENT PUBLIC + doc reconciliation (DONE + PUSHED), 2026-07-10
+**Not a lockit session — the release close-out.** Marcin's legal check cleared; flipped the repo
+to **PUBLIC**. No gate mid-flight; next session is his call (lockit / security / QA-generators).
+- **Repo is PUBLIC:** `github.com/yaaisiu/agentic-lockit-analysis`. Flip preceded by a clean final
+  pre-flight (no client data tracked or in history — only `.gitkeep`; no PII/paths; all release
+  artifacts present). Added description-consistent + **10 discoverability topics** (localization,
+  game-localization, claude-code, ai-agents, …). Marcin handles the LinkedIn post in another tool.
+- **"Unknown licence" badge explained (cosmetic).** GitHub's `licensee` reads any root `LICENSE*`
+  file; `LICENSE-docs.md` *describes* CC-BY-4.0 in prose instead of pasting its verbatim legal text,
+  so the scanner can't fingerprint it → "Apache-2.0, Unknown licenses found." Harmless; nothing
+  mislicensed. Optional clean-up (deferred, Marcin's call): rename `LICENSE-docs.md` out of the
+  `LICENSE*` glob (option 1) — not done.
+- **Doc-reality drift caught + fixed.** Reviewer (who cloned the now-public repo) found STATE /
+  kickoff / backlog / s005-note still claiming *private*. Corrected the **live-state** files;
+  **annotated** the s005 session log with a dated forward-pointer (history preserved, not rewritten).
+- **Backlog F7 added:** doc-freshness / repo-truth consistency check (grep stale-claim patterns +
+  diff asserted facts against `gh`/`git`; run at `/wake` + `/retro`; distinguish live-state files
+  from historical logs). No library promotion — parked until built. Commits `8ab8ebe` (+ push).
+- **NEXT — Marcin's call** (all prepared, no gate mid-flight): (a) resume **lockit work** — char-limit
+  hunt / a new format (JSON/`.arb`/`.strings`/xliff) / cross-locale tools on a real translation (A1) /
+  Polish-audit track; (b) **security** F5 (input/injection) &/or F6 (generated-script safety gate);
+  (c) **QA-generators** G1 (translator brief) / G2 (pseudo-loc).
+
 ## s005 — PUBLIC RELEASE PREP (DONE + PUSHED to the PRIVATE repo), 2026-07-10
 **Not a lockit session — polish-and-publish.** Worked `docs/release-plan.md` top-to-bottom; all
 three tracks done, committed, and **pushed to the private GitHub repo

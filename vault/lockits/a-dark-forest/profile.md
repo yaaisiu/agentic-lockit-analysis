@@ -71,8 +71,8 @@ See `variables.md` for the full inventory + regexes. Summary:
 - **`[DEPRECATED]`** is a filter axis: deprecated rows are **excluded from extraction by
   default** (opt-in to include) and **counted** in the report. [Q4]
 - **No in-game markup family** (no BBCode/HTML/Pango/DocBook). Drift sweep found zero unknown
-  structural tokens; only a literal `&` ("Writing & Narrative") in 2 English job titles — plain
-  text, not an entity. `[[markup-families]]` does not apply to this lockit.
+  structural tokens; only a literal `&` (e.g. a job title of the form `"Foo & Bar"`) in 2 English
+  credits rows — plain text, not an entity. `[[markup-families]]` does not apply to this lockit.
 
 ## Limits
 - **No char-limit / max-length column** — this lockit does not exercise that anatomy (it

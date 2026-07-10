@@ -58,6 +58,18 @@ A NEW capability class (fuzzy/semantic) complementing the deterministic core. Co
   like the gender/plural one, but productised and repeatable. Reads the deterministic artifacts +
   the semantic index; cites keys/notes. *(L.)*
 - Fits north-star #1 (cheaper models read the chart) and #2 (portable to an API runner).
+- **D2. NL Q&A with a pluggable model backend + transport (the on-prem seam).** Productise D1 as a
+  thin service: deterministic **grounding** (retrieve from profile + library + live toolkit queries,
+  assemble a cited context) → a **model-backend adapter** (`answer(question, grounding) → cited text`)
+  → a **transport adapter**. The point is portability: **prove it with the Claude API on the GPL
+  examples** (Wesnoth/Veloren — external egress is fine there), architected so a user swaps in an
+  **on-prem/local model** (Ollama/vLLM/llama.cpp) for NDA data with nothing else changing. Transport:
+  CLI first (safest), then a **localhost, token-auth, read-only** HTTP/webhook endpoint — Claude isn't
+  a live server, so we *generate a small standalone stdlib service* that catches the request and calls
+  the backend. Security: external egress in the proof phase is explicit + gated (never real proprietary
+  strings); **F5 applies twice** — the question *and* the retrieved content are untrusted at the model,
+  and the answer layer must never be hijackable into running tools or exfiltrating. The backend adapter
+  **is** the north-star #2 portability seam; needs F1 (telemetry) to meter calls. *(M–L.)*
 
 ## Theme E — UI / navigation
 - **E1. Lockit explorer** — browse strings + their documentation, navigate the graph, run toolkit
@@ -65,12 +77,29 @@ A NEW capability class (fuzzy/semantic) complementing the deterministic core. Co
   dedicated explorer is the bigger ask.) *(L.)*
 - **E2. Translator-facing view** — per-string: source, context, constructs to preserve, morphology
   warnings, length budget — the "workbench" a loc specialist would actually use. *(L.)*
+- **E3. Static offline lockit browser (the pragmatic first UI — security-first).** Before the full
+  explorer (E1), a **deterministic `build_browser.py` that emits one self-contained `.html`** with the
+  data inlined as JSON — **no server, no network, no external assets, no webhooks.** It is a *view over
+  what the toolkit already emits* (`inventory`/`report`/`labels`/`validate`), not new logic. V1: browse
+  + filter strings (namespace/type/untranslated/has-placeholder/has-drift); click a string → constructs
+  highlighted with their **labels + the "why"** from the library, plus inline `validate` findings; a
+  **safe example-render** (colour codes coloured, `\n` as breaks, icons as badges, variables filled with
+  sample values). **Dominant security rule:** every lockit string is untrusted — rendered as **escaped
+  text, never HTML** (a string containing `<script>`/markup must never execute); render is safe
+  *substitution*, never eval; strict inline CSP, no external anything. The generated file contains real
+  strings → it is a `data/` output (**gitignored, never committed**), same discipline as any extraction.
+  The **safe-render approach should promote to a reusable library asset** (displaying untrusted loc
+  strings + game markup without XSS) — ties to F5/F6. Later: a localhost read-only server for live search
+  over huge corpora; side-by-side source↔translation with invariant checks. *(M for v1; the safe-render
+  rule is the hard part.)*
 
 ## Theme F — Foundations / cross-cutting (mostly north-stars, some gating the above)
 - **F1. Telemetry & cost seam (north-star #3)** — wire the reserved `telemetry` block so each step
   reports calls/tokens/cost. **Prerequisite** for C/D (embedding + LLM cost must be measurable). *(M.)*
 - **F2. API-runner portability (north-star #2)** — lift the pipeline out of interactive Claude Code. *(L.)*
-- **F3. Public-release licence decision (north-star #4)** — still open; decide before first push. *(S.)*
+- **F3. Public-release licence — DECIDED + EXECUTED (s004/s005).** Apache-2.0 (code) + CC-BY-4.0
+  (docs) + a README courtesy note; repo pushed to a private GitHub remote; **public flip pending
+  Marcin's legal sanity check.** *(done.)*
 - **F4. Char-limit anatomy gap** — the one untested §5 column; needs a source hunt. `length-ref`
   is only the soft substitute. *(S–M, opportunistic.)*
 - **F5. Prompt-injection awareness + defence (security foundation).** Lockit content is *untrusted
@@ -101,8 +130,29 @@ A NEW capability class (fuzzy/semantic) complementing the deterministic core. Co
   (north-star #2) must carry the same gate without the harness's permission floor. *(S for the
   linter + checklist; M for the sandbox + subagent.)*
 
+## Theme G — Deliverable / QA generators (deterministic outputs that help the process)
+Small, deterministic tools that turn the chart + toolkit into artifacts a vendor/translator actually
+uses. All fit "help the process, don't replace translators"; all stdlib-only, no model at runtime.
+- **G1. Translator brief generator** — auto-produce the reference doc clients never provide: what each
+  column/construct means, the rules, the gotchas, and **what the format can't control** (e.g. Polish
+  case/gender — from [[morphology-location]]). Renders from profile + library into a vendor-facing
+  brief. Directly answers the "clients can't explain their own lockit" pain. *(S–M; very high value.)*
+- **G2. Pseudo-localization generator** — emit accented/expanded/bracketed pseudo-strings that
+  **preserve every placeholder + markup token** (reuse the cross-locale invariants), so teams test UI
+  truncation, encoding, and missed externalization before real translation. Pairs with length-reference
+  for overflow flags; exercises what we already know. *(S–M.)*
+- **G3. Round-trip / re-import safety check** — verify export→(translate)→import is lossless: catch
+  where CSV quoting, escaping, or BOM would corrupt on re-import. Broken deliveries are a real wound. *(M.)*
+- **G4. Encoding / mojibake / control-char sniffer** — scan a delivery for encoding corruption, stray
+  control chars, zero-width/homoglyph characters, mixed line endings, BOM inconsistency. *(S.)*
+- **G5. Standard interchange export (XLIFF / TMX)** — let the analysed lockit flow into translators'
+  existing CAT tools. Philosophically central: feed the process, don't replace it. *(M.)*
+
 ## Suggested near-term order (Marcin decides)
 1. **A1** (run prepared cross-locale tools on a real translation) — proves translator value now.
 2. **A2 + A3** (coverage + morphology flags) — cheap, high loc-specialist value.
 3. **B1/B2** (deterministic graph + reference resolution) — foundation for D/E, no LLM cost.
 4. **F1** (telemetry) before **C/D** (embeddings + NL Q&A add real cost that must be measured).
+5. **Quick wins worth slotting in early:** **G1** (translator brief) and **G2** (pseudo-loc) are cheap
+   and demo the "help the process" value directly; **E3** (static browser) makes all of the above
+   *visible* to a non-technical stakeholder without any network surface.

@@ -59,7 +59,11 @@
    length reference, drift audit. Point at `vault/dev/backlog.md` for where it's headed.
 6. **What it's NOT (yet)** — not a translator, not the Polish auditor; it's the foundation.
 7. **Security / data discipline** — `data/`/`sources/` gitignored; never commit client strings;
-   proprietary-vault discipline; only run trusted skills.
+   proprietary-vault discipline; only run trusted skills. **Prompt-injection awareness (must-have):**
+   lockit content is *untrusted external text* fed to an LLM at the "discover with the model" step,
+   so a crafted string can attempt to hijack the model — anyone running this must be aware. State
+   the risk plainly and name what mitigates it (deterministic scripts do the bulk work; deny-leaning
+   permissions; human gates). See backlog **F5** for the hardening roadmap.
 8. **Licence** + the courtesy note.
 
 ## Primer reflective pass — make onboarding easier (spec-as-written vs system-as-built)

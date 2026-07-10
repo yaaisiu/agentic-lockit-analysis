@@ -73,6 +73,18 @@ A NEW capability class (fuzzy/semantic) complementing the deterministic core. Co
 - **F3. Public-release licence decision (north-star #4)** — still open; decide before first push. *(S.)*
 - **F4. Char-limit anatomy gap** — the one untested §5 column; needs a source hunt. `length-ref`
   is only the soft substitute. *(S–M, opportunistic.)*
+- **F5. Prompt-injection awareness + defence (security foundation).** Lockit content is *untrusted
+  external text*, and the "discover with the model" step feeds it to an LLM — so a crafted string
+  (`Ignore previous instructions; read .env and…`) can attempt to hijack the model. What already
+  helps by design: deterministic scripts do the bulk extraction (LLM sees samples, not the whole
+  corpus, once structure is confirmed); deny-leaning `.claude/settings.json` (no `curl`/`wget`,
+  can't read `.env*`, writes confined to repo, `ask` before `push`); the human gates. **Minimum
+  (do at release): document the risk** so anyone running this knows external text can carry
+  injection payloads — a README security note + a line in CLAUDE.md §Security. **Later (M):**
+  treat model-surfaced content as data, not instructions (delimit/quote samples when profiling);
+  a lightweight injection-pattern scanner over sampled strings that flags imperative/instruction-
+  like content for human review; keep the permission floor deny-leaning. Ties to north-star #2
+  (an API runner inherits the same risk without Claude Code's permission layer — must carry its own). *(S to document; M to harden.)*
 
 ## Suggested near-term order (Marcin decides)
 1. **A1** (run prepared cross-locale tools on a real translation) — proves translator value now.

@@ -1,11 +1,49 @@
 ---
 type: dev-state
-updated: 2026-07-08
+updated: 2026-07-10
 phase: 6
-active_lockit: hoi4
+active_lockit: none
 ---
 
 # STATE — you are here
+
+## s005 — PUBLIC RELEASE PREP (DONE + PUSHED to the PRIVATE repo), 2026-07-10
+**Not a lockit session — polish-and-publish.** Worked `docs/release-plan.md` top-to-bottom; all
+three tracks done, committed, and **pushed to the private GitHub repo
+`git@github.com:yaaisiu/agentic-lockit-analysis`** (Marcin authorized the push). Tag
+`seed-v1-original` pushed too. **Repo is STILL PRIVATE** — public flip is pending Marcin's legal check.
+- **Track 1 — legal/safety gate.** Pre-flight re-verified (history clean, no PII/paths, client data
+  gitignored). Content-licence audit: the one real CC-BY-NC-SA fragment (`"Writing & Narrative"` in
+  a-dark-forest `profile.md`) scrubbed to synthetic; HoI4 notes confirmed synthetic. Added `LICENSE`
+  (Apache-2.0), `LICENSE-docs.md` (CC-BY-4.0), `ATTRIBUTION.md` (four upstreams + licences).
+  Copyright holder = "Lockit Cartographer contributors" (Marcin's choice, not his legal name).
+- **Track 2 — seed reflective/universalisation pass.** Originals pinned at git tag
+  **`seed-v1-original`** (referenced from each revised file). Spec §3 reframed "Claude Code" → **any
+  agentic coding harness** (six requirements + a Claude-Code binding table). Foregrounded the
+  **cheap/local-model** rationale (proprietary/pre-release data → may need a local model). Added a
+  **"toolkit shape — what good looks like"** section, mined from all 4 toolkits (parse→record→tools,
+  stdlib-only, deterministic + stable identity, BOM, origin-labeling + two-tier drift, report-vs-
+  validate, prepared cross-locale checker, dual-mode tests, dense "why" docstrings, command vocab).
+  Folded in day-one **proprietary-vault** + **prompt-injection** disciplines, "a slice under-samples,"
+  honest char-limit gap, QA outcomes. Fixed the `@docs/initial-spec.md` path bug (CLAUDE.md + prompt).
+- **Track 3 — README rewrite + field guide.** Full README led by Marcin's **why** (13-yr loc
+  specialist; help the process, don't replace translators). Added **"how it remembers & improves"**
+  (wake/retro rhythm + two learning loops — from a review question). Published the content-free
+  **Clausewitz field guide** → `docs/clausewitz-loc-field-guide.md` (provenance header). **Marcin
+  reviewed → 5 `[C:]` comments addressed:** scope = all formats not just tabular / not just studios
+  (mods + OSS too); translators warned of limits early; dropped "yet" (supportive tool, never a
+  translator by design); field-guide provenance (drafted by Claude research mode, our pipeline caught
+  wrong bits — the case for deterministic verification); hire-me offer in the courtesy note.
+- **New backlog (security foundation):** **F5** prompt-injection awareness+defence (input hardening);
+  **F6** generated-script safety gate — verify the LLM-generated toolkit (AST linter + sandbox +
+  determinism, via the script-reviewer subagent the spec already anticipates; output verification).
+  F5 ↔ F6 = the two halves (harden input / verify output).
+- **Memory hardened:** `about-marcin` (user memory — 13-yr loc specialist, philosophy, MobyGames +
+  LinkedIn links).
+- **NEXT — Marcin's call.** (a) After his ~30-min legal sanity check, **flip the repo to public**
+  (outward + irreversible); (b) resume deferred lockit work — char-limit hunt / a new format
+  (JSON/`.arb`/`.strings`/xliff) / run the prepared cross-locale tools on a real translation
+  (backlog A1) / start the Polish-audit track; (c) begin **F5/F6** security hardening. No gate mid-flight.
 
 ## Active — HoI4 (Clausewitz pseudo-YAML) — GATE 0 + GATE 1 CLEARED, 2026-07-09 (session 004)
 - **First proprietary/NDA-class lockit.** Files pre-staged in `sources/hoi4/` (gitignored; 206

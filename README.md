@@ -108,6 +108,8 @@ You don't clone a finished product; you clone a **seed** and grow it. Three file
 - [`docs/initial-spec/lockit-cartographer-spec.md`](docs/initial-spec/lockit-cartographer-spec.md) — the full spec (pipeline, anatomy checklist, the "toolkit shape", security).
 - [`docs/initial-spec/initial-prompt.md`](docs/initial-spec/initial-prompt.md) — the kickoff prompt to paste into your first session.
 
+> **Two versions of the seed — and why that matters.** What you clone here is the **improved** seed: it was *revised after four real lockits* to fold in lessons the original spec didn't yet know — the proprietary-vault discipline, "a slice under-samples," prompt-injection awareness, the harness-agnostic framing, the "toolkit shape." The **original, as-first-authored** seed is preserved untouched at git tag **`seed-v1-original`**. Run `git diff seed-v1-original -- CLAUDE.md docs/initial-spec` to see how it changed — that diff is the system *teaching its own primer to be better*, which is the whole idea in miniature. **Start from the improved seed** (recommended); read the original if you want the unvarnished first draft, or to judge for yourself what four files' worth of experience was worth.
+
 Then the loop (as slash commands in Claude Code; as pasted runbooks in another harness):
 
 ```
@@ -118,7 +120,7 @@ Then the loop (as slash commands in Claude Code; as pasted runbooks in another h
 /retro     → promote reusable patterns; write the session note + next-session kickoff
 ```
 
-**Reset to a clean seed:** empty `vault/lockits/*`, `scripts/*`, and `.claude/skills/lockit-*`; keep `vault/library/` for a head-start or clear it to start cold. This repo ships **populated** with the four examples on purpose — delete them if you want a blank slate. The original, as-first-authored seed is preserved in git at tag **`seed-v1-original`** (the current seed folds in lessons from the four worked files; `git diff seed-v1-original -- docs/initial-spec CLAUDE.md` shows the evolution).
+**Reset to a clean seed:** empty `vault/lockits/*`, `scripts/*`, and `.claude/skills/lockit-*`; keep `vault/library/` for a head-start or clear it to start cold. This repo ships **populated** with the four examples on purpose — delete them if you want a blank slate. (You're starting from the *improved* seed — see the note above on the original at tag `seed-v1-original`.)
 
 ---
 

@@ -85,6 +85,21 @@ A NEW capability class (fuzzy/semantic) complementing the deterministic core. Co
   a lightweight injection-pattern scanner over sampled strings that flags imperative/instruction-
   like content for human review; keep the permission floor deny-leaning. Ties to north-star #2
   (an API runner inherits the same risk without Claude Code's permission layer — must carry its own). *(S to document; M to harden.)*
+- **F6. Generated-script safety gate (verify the toolkit before we trust it).** Our scripts are
+  **LLM-generated, and generated under the influence of untrusted lockit content** (see F5) — so the
+  *output* is an attack surface, not just the input. GATE 2 is today a human eyeball; add a
+  **deterministic safety layer** that runs before any generated script is executed at scale or
+  packaged as a skill. **Static (AST-based):** enforce the dependency-free discipline mechanically
+  (no non-stdlib imports); forbid network (`socket`/`urllib`/`http`/`requests`), `subprocess`/
+  `os.system`/`popen`, `eval`/`exec`/`compile`/`__import__`, reads of `.env`/secrets, writes outside
+  `data/`/the repo, destructive ops (`shutil.rmtree`, unguarded `os.remove`), and `pickle`/`marshal`
+  on file data. **Dynamic:** run in a constrained sandbox (no network, restricted FS, time/mem caps);
+  require the dual-mode tests to pass; assert **determinism** (run twice, diff). **How:** a reusable
+  AST linter in `library/script-templates/` + a GATE-2 checklist, ideally driven by the scoped
+  least-privilege **script-reviewer subagent the spec already anticipates** (§3/§9). Complements F5
+  (input hardening ↔ output verification) and the *trusted-skills-only* principle; an API runner
+  (north-star #2) must carry the same gate without the harness's permission floor. *(S for the
+  linter + checklist; M for the sandbox + subagent.)*
 
 ## Suggested near-term order (Marcin decides)
 1. **A1** (run prepared cross-locale tools on a real translation) — proves translator value now.

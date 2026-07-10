@@ -2,9 +2,9 @@
 
 **Point an AI coding agent at an unknown game localisation file. Get back a documented map of its structure and a set of tested, reusable scripts to work with it — with a human in the loop at the moments that actually need judgement.**
 
-A *lockit* is the tabular localisation file a studio hands to translation vendors. Cartographer takes any lockit — or, by the same method, any tabular dataset — and:
+A *lockit* is the localisation file a project hands off for translation — and it comes in every shape: a spreadsheet or CSV, gettext `.po`, Fluent `.ftl`, JSON, YAML, Paradox pseudo-YAML, whatever the game uses. Cartographer follows the format wherever it goes (and, by the same method, works on any structured dataset). Point it at one — a studio's vendor pipeline, a fan translation mod, or an open-source game's loc, it doesn't care — and it:
 
-1. **maps** its structure (columns, string types, key conventions, variables, control codes, limits),
+1. **maps** its structure (fields & columns, string types, key conventions, variables, control codes, limits),
 2. **documents** it as a human- and machine-readable *chart* in an Obsidian vault, and
 3. **generates dependency-free Python scripts** — the *toolkit* — so any later session (or a cheaper model) can query, extract, and QA the file cleanly and for free.
 
@@ -22,7 +22,7 @@ I'm **Marcin "yasiu" Serkies**, a localisation specialist with 13 years in the t
 - lockits **riddled with errors**, and "standards" like CSV treated so loosely they barely parse;
 - deliveries — and *source* lockits — that had **no automated QA run on them at all**.
 
-So this is deliberately **not** yet another AI translation tool. I don't want to take work from translators — I want to **help the process around them**: give teams a way to *understand* a loc file, catch the technical defects a human can't spot at scale, and hand translators better structure and context. The machine does the boring, deterministic, error-prone parts; people do the judgement and the craft.
+So this is deliberately **not** yet another AI translation tool. I don't want to take work from translators — I want to **help the process around them**: give teams a way to *understand* a loc file, catch the technical defects a human can't spot at scale, and hand translators better structure and context. The machine does the boring, deterministic, error-prone parts; people do the judgement and the craft — and they go in **knowing the file's limitations**, warned early (say, where the format can't express Polish case or gender) instead of discovering them mid-project.
 
 This repo is that idea, built and worked through on four real games. It's open, and I'd genuinely like it to be useful — see [Openness](#openness) below.
 
@@ -81,7 +81,7 @@ Both loops are strictly **proposed → human-approved → applied**, each promot
 - **Drift detection** — a two-tier audit that flags any construct the documented structure doesn't recognise.
 - **Morphology reality-checks** — surfacing where a format simply *cannot* express grammatical agreement, so a translator into an inflected language is warned instead of blamed.
 
-**It is NOT** (yet) a translator, a localisation engine, or an automated Polish auditor. Those are downstream. This is the map and the tools — the thing that has to exist first.
+**It is not — and by design won't become — a translator or a localisation engine.** It's a *supportive* tool, meant to run in a safe environment: it maps the file, QAs it, and hands translators and teams better structure, context, and early warnings about the file's limits. Assisting the people who do the translating is the whole point; replacing them is not on the table.
 
 ---
 
@@ -96,7 +96,7 @@ Each was taken end-to-end through the gates, documented, and given a tested skil
 | **A Dark Forest** | Godot CSV | true tabular (key + context + 8 locale columns), JSON-array cells, CSV quoting edge cases |
 | **Hearts of Iron IV** | Paradox Clausewitz pseudo-YAML | 129k entries, `§colour`/`£icon`/`$VAR$`/`[scope.fn]`; engine-delegated morphology; first proprietary/NDA lockit |
 
-The [library](vault/library/) that grew out of these — format recognisers, reader templates, an origin-labeling + drift-audit pattern, cross-locale invariants — is what makes the *fifth* file faster. There's also a standalone, content-free [**Clausewitz localisation field guide**](docs/clausewitz-loc-field-guide.md) covering the whole Paradox franchise.
+The [library](vault/library/) that grew out of these — format recognisers, reader templates, an origin-labeling + drift-audit pattern, cross-locale invariants — is what makes the *fifth* file faster. There's also a standalone, content-free [**Clausewitz localisation field guide**](docs/clausewitz-loc-field-guide.md) covering the whole Paradox franchise. Worth noting how it was made: it was drafted by Claude's web-research mode, then checked against the real files by *this* pipeline — most of it held up, but some details were wrong. That gap is exactly why we run deterministic tooling instead of trusting a plausible write-up.
 
 ---
 
@@ -140,7 +140,7 @@ Lockits are usually **client-confidential, NDA-bound** data. The baseline is den
 - **Docs & vault** (`vault/`, `docs/`, this README) — **CC-BY-4.0** ([`LICENSE-docs.md`](LICENSE-docs.md)).
 - Worked-example upstreams are credited in [`ATTRIBUTION.md`](ATTRIBUTION.md).
 
-**Courtesy note (a request, not a term):** it's free for commercial use. If you build something commercial on top of it, I'd love to hear about it — open an issue or reach out. That's a courtesy, not a licence condition.
+**Courtesy note (a request, not a term):** it's free for commercial use. If you build something commercial on top of it, I'd love to hear about it — open an issue or reach out. That's a courtesy, not a licence condition. And if you'd like a hand standing this up in your own environment — adapting it to your formats, your pipeline, your NDA constraints — **you can hire me**; reach out via the [links below](#openness).
 
 ---
 

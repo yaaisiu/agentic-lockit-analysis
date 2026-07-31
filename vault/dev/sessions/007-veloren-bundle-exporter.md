@@ -10,14 +10,13 @@ telemetry: { model_calls: null, input_tokens: null, output_tokens: null, est_cos
 # Session 007 — Veloren bundle exporter (first downstream consumer)
 
 **A new capability, not a new lockit.** Cartographer gained its first *output contract*: it
-now produces a normalized bundle for a sibling project, **Lockit Annotator**
-(`~/lockit-annotator`), which annotates localisation strings and consumes bundles rather
-than raw lockit files. No gates fired (no intake, no re-profile) — but the work changed the
+now produces a normalized bundle for a sibling project — a **downstream consumer** that
+annotates localisation strings and consumes bundles rather than raw lockit files. No gates fired (no intake, no re-profile) — but the work changed the
 foundation parser, so the migration was proven rather than asserted.
 
 ## The shape of the problem
 
-The Annotator's `docs/EXPORTER_GUIDE.md` names Cartographer as its first producer and
+The consumer's `docs/EXPORTER_GUIDE.md` names Cartographer as its first producer and
 Veloren as the reference format — and calls out three defects in **our** code that blocked a
 conformant export. The guide is worth understanding as a genre: it exists *because JSON
 Schema cannot express which `kind` a given construct gets*. Two producers making different
@@ -26,7 +25,7 @@ schemas **plus** a construct-mapping guide — is what a converter actually need
 the seed of backlog **G6** below.
 
 The one requirement that shaped everything: **`source_text` is normative**. Every annotation
-ever stored is a character offset into the string *we* emit; the Annotator never opens the
+ever stored is a character offset into the string *we* emit; the consumer never opens the
 `.ftl` again. A bundle is not a dump, it is a promise that the same input produces the same
 bytes forever.
 
@@ -64,9 +63,9 @@ bytes forever.
    side.** 7,131 rows = 6,359 non-empty + 772 blank (424 container messages with no value at
    all are not units). 48 files, 1,267 placeholders, 0 `origin=unknown`, 0
    `structural_role=other`. Units that are *entirely one placeable*: **772 empty + 24 not
-   empty** — and 24 was the Annotator's own independent measurement of the same corpus.
+   empty** — and 24 was the consumer's own independent measurement of the same corpus.
 
-5. **Acceptance by the consumer's own importer.** `ml/lockit_bench/bundle.py::load_bundle`
+5. **Acceptance by the consumer's own importer** (`load_bundle`). It
    accepts the bundle: all seven rules and both schemas pass. 7,131 lines, 772 empty, 796
    fully masked (= 772 + 24), 6,335 annotatable, 0 untrusted placeholders. No network needed —
    their `ml/.venv` already had `jsonschema`; run with `PYTHONDONTWRITEBYTECODE=1` so not even
@@ -100,7 +99,7 @@ bytes forever.
   in `manifest.notes`). Demonstrated: `m1 = hello { $x` yields `placeholders: []` — a false
   "no placeholder here" over a live substitution point, in a field the contract defines as a
   *positive assertion*.
-- **`~/lockit-annotator` is read-only for us.** We found a real bug in their
+- **The consumer's repo is read-only for us.** We found a real bug in their
   `fixtures/openttd-mini/regenerate.py` and did **not** fix it (below) — two sessions editing
   one file is worse than a reported bug.
 
@@ -155,8 +154,8 @@ bytes forever.
 
 ## Commits
 
-- `52c8768` — feat(veloren): export normalized bundles for Lockit Annotator (v0.2 contracts).
-- `5187626` — docs(veloren): correct the TAIL() call count (2 → 1) and the blank count (771 → 772).
-- `7a457b7` — feat(veloren): capture `##`/`###` section markers as `context.section`.
-- `2113b09` — backlog: add G6 — a converter-GENERATOR skill (the method one level up).
+- `a5d9a76` — feat(veloren): export normalized bundles for a downstream consumer (v0.2 contracts).
+- `b11fba4` — docs(veloren): correct the TAIL() call count (2 → 1) and the blank count (771 → 772).
+- `da8796c` — feat(veloren): capture `##`/`###` section markers as `context.section`.
+- `53738ca` — backlog: add G6 — a converter-GENERATOR skill (the method one level up).
 - (this retro) — STATE s007 + session note + kickoff.

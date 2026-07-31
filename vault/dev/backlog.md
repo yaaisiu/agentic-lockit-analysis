@@ -163,10 +163,10 @@ uses. All fit "help the process, don't replace translators"; all stdlib-only, no
   *Recorded s007 as a direction, not scheduled.* Today `scripts/veloren/export_bundle.py` is a
   one-off, hand-written against one consumer's schemas. The generalisation: Cartographer gains a
   **skill that generates a converter** from any analysed lockit toward any **declared target
-  format** — with "convert for Lockit Annotator" as the first instance rather than the only one.
+  format** — with "convert for the first consumer" as the first instance rather than the only one.
   - **The inversion that makes it work.** Cartographer does not learn each consumer. The
     **consumer publishes an information package** — its schemas *plus* a construct-mapping guide —
-    and Cartographer loads that package as a **skill input**. The Annotator's `contracts/` +
+    and Cartographer loads that package as a **skill input**. The consumer's `contracts/` +
     `docs/EXPORTER_GUIDE.md` are the prototype of exactly such a package, and the guide exists
     *precisely because JSON Schema cannot express which `kind` a given construct gets*. That
     unexpressible half is the knowledge a generated converter needs; a schema alone is not enough.

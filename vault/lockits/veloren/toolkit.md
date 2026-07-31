@@ -23,12 +23,12 @@ changed, re-profile first.
 | `validate_placeholders.py` | cross-locale invariants (source vs translation) | `python3 validate_placeholders.py ../../data/veloren/en ../../sources/…/pl --warn` | ✅ 0 false-pos |
 | `report_all_locales.py` | technical-defect sweep over all locales → markdown | `python3 report_all_locales.py ../../data/veloren/en ../../sources/veloren/assets/voxygen/i18n out.md` | ✅ 39 locales |
 | `labels.py` | labeling registry (fluent/project/unknown) + drift audit | `python3 labels.py --audit ../../data/veloren/en` | ✅ 0 unknown |
-| `export_bundle.py` | emit a **normalized bundle** (manifest.json + lines.jsonl) for Lockit Annotator; `--check` re-verifies + proves byte-stability | `python3 export_bundle.py ../../data/veloren/en` | ✅ 7131 rows, 0 problems |
+| `export_bundle.py` | emit a **normalized bundle** (manifest.json + lines.jsonl) for a downstream consumer; `--check` re-verifies + proves byte-stability | `python3 export_bundle.py ../../data/veloren/en` | ✅ 7131 rows, 0 problems |
 | `tests/test_toolkit.py` | synthetic fixtures + real-corpus census pins | `python3 tests/test_toolkit.py` | ✅ 83/83 |
 
 ## Notes
-- **Bundle export (session 007)** — `export_bundle.py` produces the input format the sibling
-  Lockit Annotator consumes (DRAFT v0.2 contracts). Two things make it different from every
+- **Bundle export (session 007)** — `export_bundle.py` produces the input format a sibling
+  **downstream consumer** consumes (DRAFT v0.2 contracts). Two things make it different from every
   other script here: its output is **normative** (annotations are stored as character offsets
   into the `source_text` *we* emit, so re-export must be byte-identical forever), and its
   identity is a sha256 of `(kind, id, attr)` — never a line number. `source_text` uses the
@@ -37,7 +37,7 @@ changed, re-profile first.
   re-anchoring stored annotations. It **refuses to export** a corpus with `validate.py`
   ERRORs, because unbalanced braces make the scanner drop a placeable and the row would then
   assert "no placeholder here" over a live substitution point. Output → gitignored
-  `data/veloren/bundle/`. Verified by the annotator's own importer (`load_bundle`): 7,131
+  `data/veloren/bundle/`. Verified by the consumer's own importer (`load_bundle`): 7,131
   lines, 772 empty, 796 fully masked, 6,335 annotatable, 0 untrusted placeholders.
   **This script is a one-off, written by hand against one consumer's schemas — the
   generalisation is parked as backlog G6** ("prepare a converter": the consumer publishes an

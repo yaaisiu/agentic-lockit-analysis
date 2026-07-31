@@ -213,7 +213,7 @@ def placeables(text):
     """Top-level { … } SPANS in order (brace-matched, quote-aware) -> [(start, end, inner)].
 
     WHY SPANS (not just the inner text): a placeable has to be RE-ANCHORABLE in the string
-    it came from. The bundle contract we export to (lockit-annotator contracts/
+    it came from. The bundle contract we export to (the consumer's contracts/
     line.schema.json) requires every placeholder to carry (start, end, token) with
     source_text[start:end] == token EXACTLY, delimiters included — and offsets are what an
     annotation is stored against. This function used to return only text[i+1:j-1].strip(),

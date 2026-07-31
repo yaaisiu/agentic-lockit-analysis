@@ -1,6 +1,6 @@
 ---
 name: lockit-veloren-toolkit
-description: Use to parse, inventory, extract, validate, QA, or EXPORT the Veloren Fluent lockit (.ftl) — e.g. "parse a Veloren .ftl", "list placeholders / { $vars } / selectors", "extract gender forms or a key namespace", "validate Fluent structure (braces, selector defaults)", "cross-locale check a translation preserves $vars/gender", "sweep all locales for technical defects", "audit for unknown constructs (drift)", "report what we know about the lockit", "export a normalized bundle (manifest.json + lines.jsonl) for Lockit Annotator", "check a bundle / verify it is byte-reproducible". Wraps tested deterministic scripts in scripts/veloren/; prefer these over ad-hoc parsing for any Veloren Fluent localisation file.
+description: Use to parse, inventory, extract, validate, QA, or EXPORT the Veloren Fluent lockit (.ftl) — e.g. "parse a Veloren .ftl", "list placeholders / { $vars } / selectors", "extract gender forms or a key namespace", "validate Fluent structure (braces, selector defaults)", "cross-locale check a translation preserves $vars/gender", "sweep all locales for technical defects", "audit for unknown constructs (drift)", "report what we know about the lockit", "export a normalized bundle (manifest.json + lines.jsonl) for a downstream consumer", "check a bundle / verify it is byte-reproducible". Wraps tested deterministic scripts in scripts/veloren/; prefer these over ad-hoc parsing for any Veloren Fluent localisation file.
 ---
 
 # Veloren Fluent lockit toolkit
@@ -31,7 +31,7 @@ carry placeables `{ $var }`, selectors `{ $x -> … }`, functions `{ TAIL() }`, 
 | `validate_placeholders.py` | **cross-locale** invariants (source vs translation) | `python3 validate_placeholders.py <en-dir> <loc-dir> --warn` |
 | `report_all_locales.py` | technical-defect sweep over all locales | `python3 report_all_locales.py <en-dir> <locales-root> <out.md>` |
 | `labels.py` | **labeling registry + drift audit** | `python3 labels.py` · `python3 labels.py --audit <dir>` |
-| `export_bundle.py` | **normalized bundle** for Lockit Annotator (+ `--check`) | `python3 export_bundle.py <dir> [<out>] [--dry-run]` · `python3 export_bundle.py --check <bundle> [<dir>]` |
+| `export_bundle.py` | **normalized bundle** for a downstream consumer (+ `--check`) | `python3 export_bundle.py <dir> [<out>] [--dry-run]` · `python3 export_bundle.py --check <bundle> [<dir>]` |
 | `tests/test_toolkit.py` | dual-mode tests (synthetic + real census) | `python3 tests/test_toolkit.py` |
 
 ## Labeling & drift (project rule)
@@ -42,7 +42,7 @@ doesn't know yet; extend the registry deliberately, don't let it pass silently.
 
 ## Bundle export (normative output — handle differently)
 `export_bundle.py` is the one script whose output is a **contract, not a report**: the sibling
-Lockit Annotator stores every annotation as a character offset into the `source_text` this
+The downstream consumer stores every annotation as a character offset into the `source_text` this
 script emits, and never opens the .ftl again. So two rules hold:
 - **Re-export must stay byte-identical.** `source_text` uses the reader's documented
   normalisation (strip + join with LF), declared in `producer_version`; the payload sha256 is
@@ -52,7 +52,7 @@ script emits, and never opens the .ftl again. So two rules hold:
   braces make the scanner drop a placeable, so the row would claim "no placeholder here" over a
   live substitution point — and `placeholders: []` is a positive assertion in that contract.
 
-`origin: unknown` is passed through **unchanged** — it is the drift signal telling the annotator
+`origin: unknown` is passed through **unchanged** — it is the drift signal telling the consumer
 not to trust a mask and to escalate to a reviewer. Never collapse or "fix" it. Fluent only: the
 v0.2 contracts cannot represent Clausewitz or Godot-CSV lockits, and the script refuses them.
 

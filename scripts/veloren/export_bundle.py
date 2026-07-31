@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """export_bundle.py — emit a normalized BUNDLE (manifest.json + lines.jsonl) from the
-Veloren Fluent lockit, conforming to the Lockit Annotator's DRAFT v0.2 contracts.
+Veloren Fluent lockit, conforming to the downstream consumer's DRAFT v0.2 contracts.
 
 =========================== WHY THIS EXISTS (read me) ===========================
-A sibling project (lockit-annotator) annotates localisation strings. It does not read
+A sibling project annotates localisation strings. It does not read
 .ftl files — it reads a BUNDLE: one manifest describing the source, plus one JSON object
 per translatable unit. This script is the producer for the Fluent format.
 
 The contract is unusual in one way that shapes every decision below: `source_text` is
 NORMATIVE. Every annotation ever stored is a character offset into the string WE emit —
-the annotator never opens the original file. So a bundle is not a dump, it is a promise:
+the consumer never opens the original file. So a bundle is not a dump, it is a promise:
 the same input must produce byte-identical output forever, or every stored annotation
 silently points at the wrong characters.
 
@@ -27,7 +27,7 @@ Three consequences, each of which is a rule in the code:
     documented deterministic normalization" as an alternative to a verbatim slice, and
     normalised is the better string here: Fluent dedents block values anyway, so a raw
     slice would bake file indentation, trailing whitespace and any future '\r' into the
-    text an annotator anchors to. It is deterministic (a pure function of the file
+    text the consumer anchors to. It is deterministic (a pure function of the file
     bytes), and it is reversible on our side — reinsertion regenerates canonical Fluent
     indentation, which is exactly the indentation we dropped. The normalisation is
     versioned in `producer_version`, because the real risk is not nondeterminism but a
@@ -93,7 +93,7 @@ ORIGINS = frozenset(['spec', 'project', 'unknown'])
 # (it generalised the name across formats before ratification). Map at the boundary —
 # labels.py is the single source of truth and is NOT renamed to chase another repo's
 # vocabulary. 'unknown' passes through UNCHANGED: it is the drift signal that tells the
-# annotator not to trust a mask and to escalate to a reviewer. Never collapse it.
+# consumer not to trust a mask and to escalate to a reviewer. Never collapse it.
 ORIGIN_MAP = {'fluent': 'spec', 'project': 'project', 'unknown': 'unknown'}
 
 ROW_REQUIRED = ('line_id', 'seq', 'native_ref', 'file', 'line_no', 'source_text', 'placeholders')
@@ -419,7 +419,7 @@ def cmd_export(target, out_dir, dry_run, stamp, force):
     ftl = F.iter_files(target)
     if not ftl:
         sys.exit(f"ERROR: no .ftl files under {target}. This exporter is Fluent-only — the "
-                 "annotator's v0.2 contracts cannot represent clausewitz-yml or godot-csv.")
+                 "consumer's v0.2 contracts cannot represent clausewitz-yml or godot-csv.")
 
     findings = validate.validate(target)
     errors = [f for f in findings if f[0] == 'ERROR']

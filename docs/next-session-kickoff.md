@@ -11,7 +11,7 @@
 ## Where we are
 - **Four lockits, four formats, all gated + tooled.** Plus, new in s007, a **producer** role:
   `scripts/veloren/export_bundle.py` emits a normalized bundle (manifest.json + lines.jsonl) for
-  the sibling **Lockit Annotator**, accepted by that project's own importer. Veloren tests 50 → 93.
+  the sibling **downstream consumer**, accepted by that project's own importer. Veloren tests 50 → 93.
 - **The parser changed and the change was proven, not asserted.** `placeables()` returns
   `(start, end, inner)`; `inventory`/`report`/`validate`/`labels --audit` are byte-identical to a
   baseline captured before the edit. Keep that habit for any future foundation change.
@@ -42,7 +42,7 @@ and commit citing s007.
 ## Carried forward from s007
 - **Contracts are DRAFT v0.2.** At ratification: re-export and **re-pin the payload sha256** in
   `tests/test_toolkit.py`. Never re-pin reflexively — a moved hash means `source_text` moved.
-- **`~/lockit-annotator` is read-only for us.** Marcin is fixing the fixture bug we reported
+- **The consumer's repo is read-only for us.** Marcin is fixing the fixture bug we reported
   (`regenerate.py` hashes `source_id` into `line_id`, contradicting their schema) on that side.
 - Per-attribute `line_no` is still the parent entry's line (~4 lines to fix if it ever matters).
 

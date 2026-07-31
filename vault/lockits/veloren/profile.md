@@ -50,8 +50,11 @@ registry `scripts/veloren/labels.py`; unrecognised names surface as **unknown** 
 
 ## Variables & placeholders → see [[variables]]
 `{ $x }` runtime args (448 refs incl. **119 on attribute values** — track both), 26 inline
-selectors, 2 `TAIL()` custom-function calls, 13 `{ -term }`/`{ msg }` references, 771 `{""}`
-empties. All non-translatable except the text between them; **preserve verbatim**.
+selectors, **1** `TAIL()` custom-function call, 13 `{ -term }`/`{ msg }` references, **772**
+syntactic blanks. All non-translatable except the text between them; **preserve verbatim**.
+*(Corrected s007: "2 `TAIL()` calls" counted two `#` comments documenting the function; there
+is one real call. "771 `{""}`" counted one spelling — the construct occurs 772× as 771 `{""}`
++ 1 spaced `{ "" }`.)*
 
 ## Numbers
 No numeric key columns, no char-limit metadata (Fluent has none). Numbers appear only in
@@ -61,7 +64,8 @@ selector variant keys (`[0]`,`[1]`) and inside `$var`-formatted values.
 - **Selectors/plurals inline** (T-V2): `{ $x -> [1] … *[other] … }`, keep intact as one value.
   CLDR categories + explicit numbers; `*` = default. Good for grammar/plural QA cross-locale.
 - **Terms**: `-server`/`-client` shared snippets, included via `{ -term }`.
-- **`TAIL($noun)`**: Veloren-custom, strips a noun's article (`noun.ftl:1`). Preserve.
+- **`TAIL($noun)`**: Veloren-custom, strips a noun's article; documented at `noun.ftl:1`,
+  called once at `dialogue.ftl:46`. Preserve.
 - **`{""}`**: intentional blank (Fluent forbids bare `msg =`); track, exclude from translatable.
 - **`<` `>` `&`**: ordinary text in Fluent (no XML/c-format meaning); only `{`,`}` special
   (`{"{"}` for a literal). No markup family present (Pango/DocBook/POD all absent).

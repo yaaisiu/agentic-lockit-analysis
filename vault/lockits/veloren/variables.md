@@ -33,8 +33,12 @@ are dependency-free; the spec-grade parser is a `/toolkit` job.
 
 ## 3. Functions `{ FUNC(...) }`
 - **Syntax:** `{ TAIL($body) }`. Fluent built-ins are `NUMBER()`/`DATETIME()` (unused here).
-- **Meaning / where:** `TAIL()` only (2×) — **Veloren-custom**, strips a noun's leading article
-  (`noun.ftl:1`, `dialogue.ftl:46`). Lockit-specific, not portable to the library as-is.
+- **Meaning / where:** `TAIL()` only, **1 real call** (`dialogue.ftl:46`) — **Veloren-custom**,
+  strips a noun's leading article. Lockit-specific, not portable to the library as-is.
+  *(Corrected s007: this said "2×". The second was never a call — `noun.ftl:1` and
+  `dialogue.ftl:45` are `#` COMMENTS documenting the function, and a comment is not a
+  placeable. Verified by grep + the parser: exactly one `{ TAIL($body) }` in the corpus.
+  Nothing vanished when `placeables()` changed — see [[toolkit]].)*
 - **Detection:** `\{\s*([A-Z][A-Z0-9_]+)\s*\(`
 - **Translatable?** No (function + its args are code); the surrounding text is.
 

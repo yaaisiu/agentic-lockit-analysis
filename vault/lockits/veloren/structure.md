@@ -42,7 +42,8 @@ Unlike a CSV/xlsx lockit, there are no columns. The unit is a **message**; its "
 - **Selectors `{ $x -> … }`** — 26. Variant keys mix **CLDR plural categories** (`one`,
   `other`) and **explicit numbers** (`[1]`, `[0]`). Plurals are **inline**, not separate
   entries (contrast gettext `msgstr[0..N]`).
-- **Function calls** — 2, only `TAIL(…)` (a Veloren custom Fluent function).
+- **Function calls** — **1**, only `TAIL(…)` (a Veloren custom Fluent function). *(Corrected
+  s007: was "2" — the other two mentions are `#` comments about the function, not calls.)*
 - **Message/term references `{ -term }` / `{ msg }`** — 13, mostly the 2 terms.
 - **String literals `{ "…" }`** — 773, of which **771 are `{""}`** (intentionally-empty
   value, all `.desc` of modular-component fragments in `item/items/internal.ftl`) + one

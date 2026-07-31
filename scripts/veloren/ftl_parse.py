@@ -76,8 +76,8 @@ def _brace_delta(line):
 
 
 class Entry:
-    __slots__ = ('kind', 'id', 'value', 'attributes', 'comment', 'file', 'line')
-    def __init__(self, kind, id, value, attributes, comment, file, line):
+    __slots__ = ('kind', 'id', 'value', 'attributes', 'comment', 'file', 'line', 'section')
+    def __init__(self, kind, id, value, attributes, comment, file, line, section=None):
         self.kind = kind                # 'message' | 'term'
         self.id = id
         self.value = value              # str (may be '' / '{""}')
@@ -85,6 +85,7 @@ class Entry:
         self.comment = comment          # attached standalone comment or None
         self.file = file                # relative path (provenance — kept searchable)
         self.line = line                # 1-based line of the def
+        self.section = section          # enclosing '##'/'###' group marker or None
     def value_is_empty(self):
         return self.value.strip() in EMPTY_VALUES
 
@@ -105,11 +106,16 @@ def parse_text(text, file='<mem>'):
     block_lines = None                  # raw lines of the entry under construction
     block_start = 0
     block_comment = None
+    block_section = None
+    section = None                      # current '##'/'###' group marker (see below)
+    section_buf = []                    # consecutive marker lines being accumulated
+    last_marker = -2                    # line index of the previous marker line
 
     def flush():
         nonlocal block_lines
         if block_lines is not None:
-            entries.append(_build_entry(block_lines, file, block_start + 1, block_comment))
+            entries.append(_build_entry(block_lines, file, block_start + 1,
+                                        block_comment, block_section))
         block_lines = None
 
     for i, line in enumerate(lines):
@@ -118,7 +124,23 @@ def parse_text(text, file='<mem>'):
             flush()
             if len(cm.group(1)) == 1:   # '#' may attach to the next entry
                 comment_buf.append(cm.group(2) or '')
-            else:                        # '##'/'###' section markers do not attach
+            else:
+                # '##' (group) / '###' (resource) markers do NOT attach to one entry — they
+                # OPEN A SECTION that runs until the next marker. We keep the most recent one
+                # as structural context: it is the finest-grained grouping Fluent offers, and
+                # far finer than the file (48 files over ~7k units). Fluent distinguishes the
+                # two levels; we deliberately collapse them, because both answer the same
+                # question — "what part of the game is this?" — and a '###' only ever appears
+                # where no '##' has yet applied.
+                #
+                # CONSECUTIVE marker lines are ONE section: Veloren writes two-line blocks
+                # ("### This file contains non-player-facing items." / "### Feel free to
+                # ignore them."), and keeping only the last line turns a real signal into a
+                # dangling fragment. Joined like the '#' comment buffer above.
+                section_buf = (section_buf if i == last_marker + 1 else []) + \
+                              [(cm.group(2) or '').strip()]
+                last_marker = i
+                section = '\n'.join(x for x in section_buf if x) or None
                 comment_buf = []
             continue
         is_def = (line[:1] not in (' ', '\t')) and \
@@ -128,6 +150,7 @@ def parse_text(text, file='<mem>'):
             block_lines = [line]
             block_start = i
             block_comment = '\n'.join(comment_buf) if comment_buf else None
+            block_section = section
             comment_buf = []
             continue
         # continuation of the open entry, else blank/junk between entries
@@ -141,7 +164,7 @@ def parse_text(text, file='<mem>'):
     return entries
 
 
-def _build_entry(block, file, lineno, comment):
+def _build_entry(block, file, lineno, comment, section=None):
     m = RE_TERM_DEF.match(block[0]) or RE_MSG_DEF.match(block[0])
     ident = m.group(1)
     kind = 'term' if ident.startswith('-') else 'message'
@@ -161,7 +184,7 @@ def _build_entry(block, file, lineno, comment):
         depth += _brace_delta(nl)
     value = '\n'.join(value_lines).strip()
     attributes = [(name, '\n'.join(ls).strip()) for name, ls in attrs]
-    return Entry(kind, ident, value, attributes, comment, file, lineno)
+    return Entry(kind, ident, value, attributes, comment, file, lineno, section)
 
 
 def parse_file(path, root=None):
@@ -323,7 +346,8 @@ if __name__ == '__main__':
     if '--json' in sys.argv:
         entries, _ = parse_tree(target)
         out = [{'kind': e.kind, 'id': e.id, 'file': e.file, 'line': e.line,
-                'value': e.value, 'attributes': e.attributes, 'comment': e.comment}
+                'value': e.value, 'attributes': e.attributes, 'comment': e.comment,
+                'section': e.section}
                for e in entries if e.kind != 'junk']
         print(json.dumps(out, ensure_ascii=False, indent=1))
     else:

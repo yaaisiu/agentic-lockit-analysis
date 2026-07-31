@@ -123,7 +123,12 @@ def build_rows(target):
     ({""}) IS a unit — it is a deliberate authoring decision — and ships with empty=true.
     """
     entries, root = F.parse_tree(target)
+    # context is a CLASSIFICATION SIGNAL for the consumer, not translatable text. Two
+    # sources: the `#` comment attached to an entry (rare — authors seldom write them) and
+    # the enclosing `##`/`###` section marker, which is the finer-grained structural signal
+    # the consumer's pre-pass wants (the file is coarse: 48 files over ~7k units).
     comments = {e.id: e.comment for e in entries if e.kind != 'junk' and e.comment}
+    sections = {e.id: e.section for e in entries if e.kind != 'junk' and e.section}
     rows, problems = [], []
     per_file = collections.Counter()
     stats = collections.Counter()
@@ -171,8 +176,15 @@ def build_rows(target):
             row['empty'] = True
             row['empty_reason'] = EMPTY_REASON
             stats['empty'] += 1
+        ctx = {}
         if u['id'] in comments:
-            row['context'] = comments[u['id']]
+            ctx['comment'] = comments[u['id']]
+            stats['with_comment'] += 1
+        if u['id'] in sections:
+            ctx['section'] = sections[u['id']]
+            stats['with_section'] += 1
+        if ctx:
+            row['context'] = ctx        # object form, always — never a bare string
             stats['with_context'] += 1
         # acceptance signal: a unit that is ENTIRELY one placeable has no annotatable text
         if len(placeholders) == 1 and placeholders[0]['start'] == 0 \
@@ -393,7 +405,8 @@ def census(stats, kinds, origins, files):
     print(f"  by origin:              {dict(sorted(origins.items()))}")
     print(f"entirely one placeable:   {stats.get('fully_masked_empty', 0)} empty:true + "
           f"{stats.get('fully_masked_nonempty', 0)} NOT empty")
-    print(f"rows with context:        {stats.get('with_context', 0)}")
+    print(f"rows with context:        {stats.get('with_context', 0)}  "
+          f"({stats.get('with_section', 0)} section, {stats.get('with_comment', 0)} comment)")
     print(f"DRIFT — origin=unknown:   {stats['unknown_origin']}"
           + ("   <-- REVIEWER ESCALATION" if stats['unknown_origin'] else ""))
     print(f"DRIFT — role=other:       {stats['role_other']}"

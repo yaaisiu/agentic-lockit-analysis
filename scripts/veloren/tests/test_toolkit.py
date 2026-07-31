@@ -21,6 +21,9 @@ def check(name, cond):
     n['pass' if cond else 'fail'] += 1
 
 FIX = '''\
+### Fixture resource comment.
+### Second line of the same block.
+
 # a standalone comment
 buff-heal = Heal
     .desc = Gain health over time.
@@ -40,6 +43,8 @@ hud-free_look =
 char-para = Line one.
 
     Line two after a blank.
+
+## Dialogue
 
 npc-name = Guard
     .masc = Guard
@@ -71,6 +76,15 @@ def test_parser():
     check("attr_role variant", F.attr_role('a0') == 'variant' and F.attr_role('a12') == 'variant')
     check("attr_role metadata", F.attr_role('desc') == 'metadata')
     check("{\"\"} empty attribute recognised", by['frag'].attributes[0][1].strip() in F.EMPTY_VALUES)
+    check("### resource marker becomes the section",
+          by['buff-heal'].section == 'Fixture resource comment.\nSecond line of the same block.')
+    check("consecutive marker lines join into ONE section",
+          '\n' in by['buff-heal'].section)
+    check("a later ## marker replaces the section", by['npc-name'].section == 'Dialogue')
+    check("section does not leak into the value or the comment",
+          'Dialogue' not in by['npc-name'].value and by['npc-name'].comment is None)
+    check("a '#' comment still attaches independently of the section",
+          by['buff-heal'].comment == 'a standalone comment')
 
 
 def test_placeables():
@@ -210,6 +224,12 @@ def test_export_bundle():
           all(r['source_text'] != '' for r in rows))
     check("{\"\"} row is empty:true with a literal placeholder",
           any(r.get('empty') and r['placeholders'][0]['kind'] == 'literal' for r in rows))
+    ctx = [r['context'] for r in rows if 'context' in r]
+    check("context is an OBJECT, never a bare string", all(isinstance(c, dict) for c in ctx))
+    check("context carries the section", any(c.get('section') == 'Dialogue' for c in ctx))
+    check("context carries the comment too", any('comment' in c for c in ctx))
+    check("context keys stay inside the producer's vocabulary",
+          all(set(c) <= {'comment', 'section'} for c in ctx))
     check("origin is mapped to the contract enum (fluent -> spec)",
           all(p['origin'] in EB.ORIGINS for r in rows for p in r['placeholders']))
     check("TAIL-style project origin survives the map", EB.ORIGIN_MAP['project'] == 'project')
@@ -247,11 +267,13 @@ def test_export_bundle():
     check("entirely one placeable: 772 empty + 24 non-empty",
           (stats['fully_masked_empty'], stats['fully_masked_nonempty']) == (772, 24))
     check("real corpus self-check clean", not EB.verify_rows(rows, files))
+    check("3979 rows carry a section, 11 a comment",
+          stats['with_section'] == 3979 and stats['with_comment'] == 11)
     # THE pin: if a parser change moves source_text, this fails instead of a frozen
     # benchmark silently re-anchoring. Regenerate deliberately, never reflexively.
     check("payload sha256 pinned",
           __import__('hashlib').sha256(EB.serialize(rows)).hexdigest() ==
-          'ad9fb439827ebc1e652a78733f07462aaf75c5054898d47e3cad4e48462a648d')
+          '3fcb27d0f7550111b9f7988acf0a0058d5fa68508ae139a519c21ac95539111c')
 
 
 def test_real_corpus():

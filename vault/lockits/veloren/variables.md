@@ -30,6 +30,14 @@ are dependency-free; the spec-grade parser is a `/toolkit` job.
 - **Translatable?** The variant *text* yes; keep the whole selector **intact as one value**
   (don't split into rows). Cross-locale QA: target language must supply the right plural
   categories/arity ([[cross-locale-invariants]], [[list-grammar-cldr]]).
+- **A selector is NOT a token — never mask it as one** (s008). It is syntax wrapped *around*
+  translatable prose, so anything that treats the construct as a single opaque span deletes
+  that prose. When a span will be used as a mask, flatten: head `{ $x ->` · each variant key
+  `[1]` / `*[other]` · closer `}` are the tokens; the variant bodies are text. In this corpus
+  the 26 constructs are **105 syntax tokens**, and **65 `{ $var }`** sit *inside* variant bodies
+  — invisible until flattening. Tool: `ftl_parse.placeable_tokens()` (vs `placeables()`, which
+  stays one-span-per-construct for counting/validation).
+  See [[library/heuristics/mask-the-syntax-not-the-construct]].
 
 ## 3. Functions `{ FUNC(...) }`
 - **Syntax:** `{ TAIL($body) }`. Fluent built-ins are `NUMBER()`/`DATETIME()` (unused here).

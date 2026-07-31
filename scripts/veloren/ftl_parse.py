@@ -233,10 +233,11 @@ def placeables(text):
     reports them as an ERROR; that stays the channel a human hears about it. (0 in the
     Veloren en corpus.)
 
-    NOTE for nesting: this is TOP-LEVEL only, by design — the bundle contract's v0.2
-    containment model lists top-level placeables only, and a selector is ONE span covering
-    its variant text. validate.py recurses into selector bodies for its own checks; spans
-    from that recursion are relative to the inner string, not to the unit.
+    NOTE for nesting: this is TOP-LEVEL only, by design. A selector comes back as ONE span
+    covering its variant text, which is the right answer for counting and validation but the
+    WRONG answer for masking — see placeable_tokens() below, which flattens it. validate.py
+    recurses into selector bodies for its own checks; spans from that recursion are relative
+    to the inner string, not to the unit.
     """
     out = []; i = 0; n = len(text)
     while i < n:
@@ -259,6 +260,130 @@ def placeables(text):
         else:
             i += 1
     return out
+
+
+# ---- placeable TOKENS (the flattened, mask-safe view) ---------------------------
+def _selector_syntax(text, s, e):
+    """Locate the SYNTAX pieces of the selector written at text[s:e] (braces included).
+
+    -> (arrow_end, [(kstart, kend, key, starred), …])  or  None if there is no depth-0 '->'.
+
+    Two rules make this a scan rather than a parser:
+      * The ARROW is the first '->' at brace depth 0 outside a "string literal". Anything
+        deeper belongs to a nested placeable; anything quoted is text.
+      * A VARIANT KEY is '[key]' or '*[key]' at depth 0 *at the start of a line*. Fluent's
+        grammar requires a line end before every variant, so this is not a heuristic — it is
+        what distinguishes a variant key from a literal bracket in prose ("Press [F] …"),
+        which is a real string shape and must stay translatable.
+    """
+    i, stop = s + 1, e - 1
+    depth = 0; in_str = False; esc = False
+    arrow_end = None; keys = []
+    at_line_start = False              # we are just past '{', not at a line start
+    while i < stop:
+        c = text[i]
+        if in_str:
+            if esc:          esc = False
+            elif c == '\\':  esc = True
+            elif c == '"':   in_str = False
+            i += 1; continue
+        if c == '\n':
+            at_line_start = True; i += 1; continue
+        if c == '"':
+            in_str = True; at_line_start = False; i += 1; continue
+        if c == '{':
+            depth += 1; at_line_start = False; i += 1; continue
+        if c == '}':
+            depth -= 1; at_line_start = False; i += 1; continue
+        if depth == 0 and arrow_end is None and text.startswith('->', i):
+            arrow_end = i + 2; i = arrow_end; at_line_start = False; continue
+        if depth == 0 and arrow_end is not None and at_line_start and \
+                (c == '[' or (c == '*' and text[i + 1:i + 2] == '[')):
+            j = text.find(']', i, stop)
+            if j == -1:
+                break                   # malformed; caller falls back to the whole span
+            keys.append((i, j + 1, text[i + (2 if c == '*' else 1):j].strip(), c == '*'))
+            i = j + 1; at_line_start = False; continue
+        if c not in ' \t':
+            at_line_start = False
+        i += 1
+    return None if arrow_end is None else (arrow_end, keys)
+
+
+def placeable_tokens(text):
+    """Every placeable TOKEN in `text`, flattened, as [(start, end, syntax, payload)].
+
+    ======================= WHY THIS EXISTS, AND WHY IT IS NOT placeables() =======================
+    placeables() answers "what constructs are in this string?" — one span per construct. That is
+    right for inventory and validation. It is WRONG the moment a span is used as a MASK, because
+    a Fluent selector is not a token: it is syntax wrapped AROUND translatable prose.
+
+        buff-heal .stat = { $duration ->
+        [1] Restores { $str_total } health points over { $duration } second.
+        *[other] … }
+
+    One span over the whole construct masks the entire unit. "Restores … health points over …
+    second." — real, translatable, reviewable English — disappears. The unit reports as 100%
+    non-annotatable and nobody is told anything was lost.
+
+    The invariant to implement against is not "mask the constructs", it is:
+
+        THE COMPLEMENT OF THE SPANS IS EXACTLY THE TRANSLATABLE TEXT.
+
+    Stated that way it is checkable by subtraction, which is how the exporter checks it. Stated
+    as a prohibition ("don't swallow prose") it is only checkable by remembering to look — and
+    the case that matters most is the one nobody looks at: a selector in the MIDDLE of a
+    sentence raises no flag at all. `Gave { $given -> [1] only one *[other] { $given } } of …`
+    is not fully masked, so no coverage metric fires, yet "only one" is inside the mask. Any
+    count of fully-masked units systematically UNDERSTATES the damage.
+
+    So: ONE SPAN PER PLACEABLE TOKEN, not per construct. A selector is flattened into its head
+    ('{ $duration ->'), each variant key ('[1]', '*[other]') and its closer ('}'); the variant
+    BODIES are left exposed, and placeables inside them are flattened by the same rule,
+    recursively, to any depth.
+
+    THIS IS FLATTENING, NOT NESTING — and that is why it is cheap. Spans still never overlap and
+    are still in ascending start order, so no caller needs a containment hierarchy or a
+    parent/child link. Nothing about the existing invariants changes.
+
+    `syntax` says what each token is; `payload` carries what the caller needs to label it:
+        'placeable'      a complete { … }; payload = the stripped inner text (classify it)
+        'selector-head'  '{ $x ->';        payload = the selector variable name ('' if none)
+        'selector-key'   '[one]'/'*[other]'; payload = the key text (the '*' is IN the token)
+        'selector-close' '}';              payload = None
+
+    FALLBACK: a placeable that classifies as a selector but has no depth-0 '->' (so we cannot
+    tell syntax from prose) comes back as ONE 'placeable' token — the old behaviour. It is not
+    silently correct, it is deliberately conservative: the exporter detects kind 'selector'
+    arriving as a whole 'placeable' and refuses to write the bundle. 0 occurrences here.
+    """
+    out = []
+    for s, e, inner in placeables(text):
+        _flatten(text, s, e, inner, out)
+    return out
+
+
+def _flatten(text, s, e, inner, out):
+    if classify_placeable(inner)[0] != 'selector':
+        out.append((s, e, 'placeable', inner))
+        return
+    found = _selector_syntax(text, s, e)
+    if found is None:                                   # see FALLBACK above
+        out.append((s, e, 'placeable', inner))
+        return
+    arrow_end, keys = found
+    mm = re.search(rf'\$({IDENT})', text[s:arrow_end])
+    spans = [(s, arrow_end, 'selector-head', mm.group(1) if mm else '')]
+    spans += [(ks, ke, 'selector-key', key) for ks, ke, key, _star in keys]
+    spans.append((e - 1, e, 'selector-close', None))
+    # Emit in ascending order, recursing into each GAP between two syntax pieces. The gaps are
+    # the variant bodies: brace-balanced by construction, so placeables() reads them directly.
+    for idx, sp in enumerate(spans):
+        out.append(sp)
+        if idx + 1 < len(spans):
+            a, b = sp[1], spans[idx + 1][0]
+            for ss, ee, inn in placeables(text[a:b]):
+                _flatten(text, a + ss, a + ee, inn, out)
 
 
 def classify_placeable(p):

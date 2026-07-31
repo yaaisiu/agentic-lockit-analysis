@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """export_bundle.py — emit a normalized BUNDLE (manifest.json + lines.jsonl) from the
-Veloren Fluent lockit, conforming to the downstream consumer's DRAFT v0.2 contracts.
+Veloren Fluent lockit, conforming to the downstream consumer's DRAFT v0.3 contracts.
 
 =========================== WHY THIS EXISTS (read me) ===========================
 A sibling project annotates localisation strings. It does not read
@@ -13,7 +13,18 @@ the consumer never opens the original file. So a bundle is not a dump, it is a p
 the same input must produce byte-identical output forever, or every stored annotation
 silently points at the wrong characters.
 
-Three consequences, each of which is a rule in the code:
+Four consequences, each of which is a rule in the code:
+
+ 0. A PLACEHOLDER SPAN IS A MASK, SO IT MUST NEVER CONTAIN TRANSLATABLE TEXT. Contract
+    0.3.0 states the invariant in its operational form — THE COMPLEMENT OF THE SPANS IS
+    EXACTLY THE TRANSLATABLE TEXT — and we implement that form, because subtraction is
+    something you can run. A Fluent selector is therefore FLATTENED into its syntactic
+    tokens (head / variant keys / closer) with the variant bodies left exposed; see
+    ftl_parse.placeable_tokens. Under 0.2.0 one span covered the whole construct, which
+    masked real prose ("Restores { $str_total } health points over …") and — worse, because
+    nothing flagged it — masked the words inside a selector sitting mid-sentence. Every span
+    is checked back against the complement here (complement_syntax) before anything is
+    written.
 
  1. IDENTITY IS A HASH OF THE NATURAL KEY, NEVER A LINE NUMBER. `line_id` is a pure
     function of (kind, id, attr) — the same three fields we publish as `native_ref`.
@@ -69,7 +80,12 @@ import labels
 import validate
 
 # ---- bundle identity (parameterise here for another Fluent lockit) ----------------
-BUNDLE_VERSION   = '0.2.0'                # semver of the CONTRACT, not of the game
+# semver of the CONTRACT, not of the game. 0.2.0 -> 0.3.0 is a SEMANTIC change that no
+# validator can see: through 0.2.0 a 'selector' span covered the whole construct including its
+# translatable variant bodies; from 0.3.0 it covers one piece of selector SYNTAX and the bodies
+# are exposed. Both shapes validate against the same schema while meaning opposite things by the
+# same token, so this string is the ONLY discriminator a consumer has. Never reuse a version.
+BUNDLE_VERSION   = '0.3.0'
 SOURCE_ID        = 'veloren'
 SOURCE_NAME      = 'Veloren (en)'
 SOURCE_FORMAT    = 'fluent-ftl'
@@ -143,15 +159,24 @@ def build_rows(target):
 
         placeholders = []
         prev_end = 0
-        for start, end, inner in F.placeables(text):
-            kind, origin, detail, _ = labels.label_placeable(inner, F.classify_placeable)
-            origin = ORIGIN_MAP.get(origin, 'unknown')
+        for start, end, syntax, payload in F.placeable_tokens(text):
             token = text[start:end]
-            # Build-time integrity: the scanner returned BOTH offsets and text, so cross-
-            # check them against each other. This is the assertion that fails if the two
-            # ever come from different strings — the whole bug class this format fears.
-            if token[1:-1].strip() != inner:
-                problems.append(f"{u['id']}.{u['attr']}: span/inner disagree at {start}")
+            if syntax == 'placeable':
+                kind, origin, detail, _ = labels.label_placeable(payload, F.classify_placeable)
+                # Build-time integrity: the scanner returned BOTH offsets and text, so cross-
+                # check them against each other. This is the assertion that fails if the two
+                # ever come from different strings — the whole bug class this format fears.
+                if token[1:-1].strip() != payload:
+                    problems.append(f"{u['id']}.{u['attr']}: span/inner disagree at {start}")
+                if kind == 'selector':
+                    # A whole selector arriving as one token means placeable_tokens hit its
+                    # fallback: it could not tell syntax from prose, so this span would mask
+                    # the variant bodies. Refuse rather than emit a mask over translatable text.
+                    problems.append(f"{u['id']}.{u['attr']}: selector at {start} was NOT "
+                                    "flattened (no depth-0 '->') — span would swallow prose")
+            else:
+                kind, origin, detail, _ = labels.label_selector_piece(syntax, payload)
+            origin = ORIGIN_MAP.get(origin, 'unknown')
             if start < prev_end:
                 problems.append(f"{u['id']}.{u['attr']}: overlapping placeables at {start}")
             prev_end = end
@@ -260,17 +285,66 @@ def build_manifest(rows, files, payload, stats, kinds, origins, stamp, forced, a
                          'value': hashlib.sha256(payload).hexdigest(),
                          'covers': 'lines.jsonl'}
     m['placeholder_style'] = (
-        "Fluent placeables in { } braces: variables { $x }, inline selectors "
-        "{ $x -> [key] ... *[other] ... } (one span covering their variant text), term refs "
-        "{ -term }, message refs { msg.attr }, functions { TAIL($x) }, and string literals "
-        '{ "" }. Human-readable only -- never parsed. All placeholder knowledge comes from '
-        "lines[].placeholders spans.")
+        "Fluent placeables in { } braces: variables { $x }, term refs { -term }, message refs "
+        '{ msg.attr }, functions { TAIL($x) }, string literals { "" }. Inline selectors are '
+        "FLATTENED per contract 0.3.0: the head '{ $x ->', each variant key '[k]' / '*[k]' and "
+        "the closer '}' are separate spans of kind=selector, and the variant BODIES are left "
+        "exposed as the translatable prose they are (recursively, to any depth). The complement "
+        "of the spans is exactly the translatable text. Human-readable only -- never parsed. "
+        "All placeholder knowledge comes from lines[].placeholders spans.")
     m['files'] = files
     m['notes'] = notes
     return m
 
 
 # ---- verification ----------------------------------------------------------------
+def _token_shape_ok(tok):
+    """A placeholder token is one of four shapes under the 0.3.0 flattened model."""
+    return ((tok[:1] == '{' and tok[-1:] == '}')          # a whole placeable { … }
+            or (tok[:1] == '{' and tok[-2:] == '->')      # a selector head  { $x ->
+            or (tok[:1] in '[*' and tok[-1:] == ']')      # a variant key  [k] / *[k]
+            or tok == '}')                                # a selector closer
+
+
+def complement(text, placeholders):
+    """The text with every placeholder span removed -> [(start, end, chunk), …].
+
+    This is the contract's governing rule turned into an OPERATION. The rule reads
+    "a placeholder span must never contain translatable text"; its equivalent form —
+    "the complement of the spans is exactly the translatable text" — is the one worth
+    implementing against, because subtraction is something you can run, whereas a
+    prohibition is something you have to remember to check.
+    """
+    out, prev = [], 0
+    for ph in placeholders:
+        if ph['start'] > prev:
+            out.append((prev, ph['start'], text[prev:ph['start']]))
+        prev = max(prev, ph['end'])
+    if prev < len(text):
+        out.append((prev, len(text), text[prev:]))
+    return out
+
+
+def complement_syntax(text, placeholders):
+    """Report any FLUENT SYNTAX left in the complement — i.e. characters we are handing to a
+    reviewer as if they were prose. The mirror image of a mask that swallows prose, and the
+    check that would have caught the 0.2.0 model's absence of one: a brace or an arrow outside
+    every span means the flattening emitted the wrong pieces, not merely too few."""
+    # '{' and '}' are unconditional: Fluent has no bare literal brace (a real one is written
+    # {"{"}), so an unmasked brace is always our bug. '->' is checked ONLY on units that
+    # actually contain a selector — an arrow in prose ("press W -> S") is legal text, and a
+    # check that fires on it would train a reader to ignore the check.
+    needles = ('{', '}') + (('->',) if any(p['kind'] == 'selector' for p in placeholders) else ())
+    bad = []
+    for s, _e, chunk in complement(text, placeholders):
+        for needle in needles:
+            k = chunk.find(needle)
+            if k != -1:
+                bad.append(f"complement leaks Fluent syntax {needle!r} at {s + k} "
+                           f"({chunk[max(0, k - 12):k + 12]!r})")
+    return bad
+
+
 def verify_rows(rows, files):
     """The importer's hard-reject rules, checked over rows we can see. Returns problems.
 
@@ -326,12 +400,15 @@ def verify_rows(rows, files):
             if s < prev_end:
                 p.append(f"row {ref}: placeholders overlap or are unsorted at {s}")
             prev_end = e
-            if tok[:1] != '{' or tok[-1:] != '}':
-                p.append(f"row {ref}: token is not brace-delimited")
+            if not _token_shape_ok(tok):
+                p.append(f"row {ref}: token {tok[:30]!r} is not a placeable token "
+                         "({...} / '{ $x ->' / '[k]' / '*[k]' / '}')")
             if ph['kind'] not in KINDS:
                 p.append(f"row {ref}: kind {ph['kind']!r} outside the contract enum")
             if ph['origin'] not in ORIGINS:
                 p.append(f"row {ref}: origin {ph['origin']!r} outside the contract enum")
+        for leak in complement_syntax(text, r.get('placeholders', [])):
+            p.append(f"row {ref}: {leak}")
     for f in files:
         if counts[f['path']] != f['line_count']:
             p.append(f"files[] count mismatch for {f['path']}: "

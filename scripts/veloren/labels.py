@@ -113,6 +113,27 @@ def label_placeable(p, classify):
     return (kind, o, detail, note)
 
 
+# --- SELECTOR SYNTAX PIECES ------------------------------------------------------
+# A selector is not one token: it is syntax wrapped around translatable prose. When a span is
+# used as a MASK it must cover only the syntax (see ftl_parse.placeable_tokens), so the head,
+# each variant key and the closer are labeled here as constructs in their own right. All three
+# are pure Fluent grammar → origin 'fluent'; the VARIANT KEY defers to label_variant_key, so an
+# unrecognised key still surfaces as drift instead of being waved through as "selector syntax".
+SELECTOR_PIECES = {
+    'selector-head':  'selector head { $x -> — the variable being switched on',
+    'selector-key':   'selector variant key [k] / *[k] (starred = default)',
+    'selector-close': 'selector closer }',
+}
+def label_selector_piece(syntax, payload):
+    """-> (kind, origin, detail, note). kind is always 'selector'."""
+    if syntax == 'selector-key':
+        o, note = label_variant_key(payload)
+        return ('selector', o, payload, note)
+    if syntax not in SELECTOR_PIECES:
+        return ('selector', UNKNOWN, '', f'unrecognised selector piece {syntax!r} — classify me')
+    return ('selector', FLUENT, payload or '', SELECTOR_PIECES[syntax])
+
+
 # --- registry dump (documentation) ----------------------------------------------
 def print_registry():
     print("LABELING REGISTRY (origin: fluent = format spec · project = Veloren · unknown = flag)\n")
@@ -128,6 +149,9 @@ def print_registry():
     print("\nPLACEABLE KINDS:")
     for k, (orig, note) in PLACEABLE_ORIGIN.items():
         print(f"  {k:<9} origin={orig:<8} {note}")
+    print("\nSELECTOR SYNTAX PIECES (a selector masks as 3+ tokens, never as one construct):")
+    for k, note in SELECTOR_PIECES.items():
+        print(f"  {k:<15} origin=fluent   {note}")
     print("\nFUNCTIONS:")
     for n, (orig, note) in FUNCTIONS.items():
         print(f"  {n:<9} origin={orig:<8} {note}")

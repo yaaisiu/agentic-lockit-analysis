@@ -125,6 +125,66 @@ def test_placeable_spans():
           all(multi[a:b][0] == '{' and multi[a:b][-1] == '}' for a, b, _ in sp))
 
 
+def test_placeable_tokens():
+    """The 0.3.0 containment model. WHY: a placeholder span is a MASK, so the rule is
+    semantic — a span must never contain translatable text — and the form worth testing is
+    its equivalent: THE COMPLEMENT OF THE SPANS IS EXACTLY THE TRANSLATABLE TEXT. Under the
+    old one-span-per-construct model a selector masked its own variant bodies, deleting real
+    prose from the reviewable corpus with nothing to flag it."""
+    print("[placeable tokens — selector flattening (contract 0.3.0)]")
+    import export_bundle as EB
+    t = '{ $n ->\n[1] one apple\n*[other] { $n } apples\n}'
+    toks = F.placeable_tokens(t)
+    kinds = [s for _a, _b, s, _p in toks]
+    check("selector flattens: head + 2 keys + closer + the var inside a body",
+          kinds == ['selector-head', 'selector-key', 'selector-key', 'placeable',
+                    'selector-close'])
+    check("tokens are in ascending start order",
+          [a for a, _b, _s, _p in toks] == sorted(a for a, _b, _s, _p in toks))
+    check("head token is the syntax only, payload = the switched variable",
+          (t[toks[0][0]:toks[0][1]], toks[0][3]) == ('{ $n ->', 'n'))
+    check("variant key token INCLUDES the '*' of the default",
+          (t[toks[2][0]:toks[2][1]], toks[2][3]) == ('*[other]', 'other'))
+    check("closer is the bare '}'", t[toks[4][0]:toks[4][1]] == '}')
+    check("NO token is the whole construct any more (the 0.2.0 shape is gone)",
+          not any(a == 0 and b == len(t) for a, b, _s, _p in toks))
+    # the operational invariant, run as an operation
+    phs = [{'start': a, 'end': b, 'kind': 'selector'} for a, b, _s, _p in toks]
+    comp = ''.join(c for _a, _b, c in EB.complement(t, phs))
+    check("complement holds the prose", 'one apple' in comp and 'apples' in comp)
+    check("complement holds NO Fluent syntax",
+          not EB.complement_syntax(t, [dict(p, token='') for p in phs]))
+
+    # THE case that raises no flag: a selector in the MIDDLE of a sentence. The unit is not
+    # fully masked, so no coverage metric fires — yet 'only one' sits inside the mask.
+    mid = 'Gave { $n ->\n[1] only one\n*[other] { $n }\n} of { $t } items.'
+    comp = ''.join(c for _a, _b, c in EB.complement(
+        mid, [{'start': a, 'end': b} for a, b, _s, _p in F.placeable_tokens(mid)]))
+    check("mid-sentence selector: 'only one' survives into the complement", 'only one' in comp)
+    check("mid-sentence selector: the sentence around it survives too",
+          'Gave ' in comp and ' of ' in comp and ' items.' in comp)
+
+    # nesting is handled by recursion, not by a containment hierarchy
+    nest = '{ $a ->\n[one] x { $b ->\n[one] y\n*[other] z\n}\n*[other] w\n}'
+    ntoks = F.placeable_tokens(nest)
+    check("a selector nested in a variant body is flattened too, to any depth",
+          [s for _a, _b, s, _p in ntoks].count('selector-head') == 2)
+    check("nested tokens still never overlap",
+          all(ntoks[i][1] <= ntoks[i + 1][0] for i in range(len(ntoks) - 1)))
+    check("nested prose stays exposed",
+          all(w in ''.join(c for _a, _b, c in EB.complement(
+              nest, [{'start': a, 'end': b} for a, b, _s, _p in ntoks]))
+              for w in ('x ', 'y', 'z', 'w')))
+
+    # a literal bracket in prose is NOT a variant key: Fluent requires a line end before one
+    lit = '{ $n ->\n[one] press [F] now\n*[other] press [F] now\n}'
+    keytoks = [lit[a:b] for a, b, s, _p in F.placeable_tokens(lit) if s == 'selector-key']
+    check("'[F]' mid-line is prose, not a variant key", keytoks == ['[one]', '*[other]'])
+    check("non-selectors are untouched by flattening",
+          F.placeable_tokens('a { $x } b { -t }') ==
+          [(2, 8, 'placeable', '$x'), (11, 17, 'placeable', '-t')])
+
+
 def test_translatable_units():
     print("[translatable units]")
     ents = F.parse_text(FIX, 'fix.ftl')
@@ -173,6 +233,14 @@ def test_labels():
     check("CLDR key origin=fluent", labels.label_variant_key('other')[0] == 'fluent')
     check("integer key origin=fluent", labels.label_variant_key('1')[0] == 'fluent')
     check("bad variant key flagged", labels.label_variant_key('plural')[0] == 'unknown')
+    check("selector head labeled kind=selector origin=fluent",
+          labels.label_selector_piece('selector-head', 'n')[:3] == ('selector', 'fluent', 'n'))
+    check("selector closer carries no detail",
+          labels.label_selector_piece('selector-close', None)[:3] == ('selector', 'fluent', ''))
+    check("a variant key still defers to the registry (CLDR -> fluent)",
+          labels.label_selector_piece('selector-key', 'other')[:3] == ('selector', 'fluent', 'other'))
+    check("an unrecognised variant key stays DRIFT even as selector syntax",
+          labels.label_selector_piece('selector-key', 'plural')[1] == 'unknown')
     # drift: a fixture with an unknown attr + unknown function must be caught
     drift = 'm = { ZORP($x) }\n    .wibble = hi\n'
     ents = F.parse_text(drift, 'd.ftl')
@@ -258,22 +326,41 @@ def test_export_bundle():
     check("7131 rows (6359 non-empty + 772 blank)", len(rows) == 7131 and stats['empty'] == 772)
     check("424 container messages skipped", stats['skipped_absent_value'] == 424)
     check("48 files in the inventory", len(files) == 48)
-    check("1267 placeholders", stats['placeholders'] == 1267)
-    check("kinds pinned", dict(kinds) == {'var': 454, 'selector': 26, 'term-ref': 13,
-                                          'function': 1, 'literal': 773})
-    check("origins pinned (1266 spec + 1 project)", dict(origins) == {'spec': 1266, 'project': 1})
+    # 1411 = the 1267 constructs of the 0.2.0 model, minus nothing, plus 79 selector syntax
+    # pieces (26 heads + 53 keys + 26 closers, less the 26 whole-construct spans they replace)
+    # plus 65 vars that were previously BURIED inside a selector mask and are now visible.
+    check("1411 placeholder tokens", stats['placeholders'] == 1411)
+    check("kinds pinned (selector 26 constructs -> 105 syntax tokens; var 454 -> 519)",
+          dict(kinds) == {'var': 519, 'selector': 105, 'term-ref': 13,
+                          'function': 1, 'literal': 773})
+    check("origins pinned (1410 spec + 1 project)", dict(origins) == {'spec': 1410, 'project': 1})
     check("0 drift: no unknown origin, no role=other",
           stats['unknown_origin'] == 0 and stats['role_other'] == 0)
-    check("entirely one placeable: 772 empty + 24 non-empty",
-          (stats['fully_masked_empty'], stats['fully_masked_nonempty']) == (772, 24))
+    # Was (772, 24) under 0.2.0. The 23 that left were never really fully masked — a selector
+    # merely happened to span their whole value. Note this metric ALSO missed every partial
+    # case, which is why complement_syntax, not this counter, is the invariant we enforce.
+    check("entirely one placeable: 772 empty + 1 non-empty (was 24 under 0.2.0)",
+          (stats['fully_masked_empty'], stats['fully_masked_nonempty']) == (772, 1))
     check("real corpus self-check clean", not EB.verify_rows(rows, files))
+    check("no unit leaks Fluent syntax into its complement",
+          not [x for r in rows for x in EB.complement_syntax(r['source_text'], r['placeholders'])])
     check("3979 rows carry a section, 11 a comment",
           stats['with_section'] == 3979 and stats['with_comment'] == 11)
-    # THE pin: if a parser change moves source_text, this fails instead of a frozen
-    # benchmark silently re-anchoring. Regenerate deliberately, never reflexively.
-    check("payload sha256 pinned",
-          __import__('hashlib').sha256(EB.serialize(rows)).hexdigest() ==
-          '3fcb27d0f7550111b9f7988acf0a0058d5fa68508ae139a519c21ac95539111c')
+    # TWO pins, deliberately separate. source_text is the NORMATIVE string every stored
+    # annotation is an offset into; the payload additionally carries the placeholder model.
+    # Splitting them is what makes "re-pin deliberately, never reflexively" checkable: a
+    # contract change moves the payload hash ALONE, and the source_text hash standing still
+    # is the proof that no annotation re-anchored. If both move, a parser edit came along
+    # for the ride — stop and find out which.
+    sha = __import__('hashlib').sha256
+    check("source_text corpus sha256 pinned (UNCHANGED across the 0.2.0 -> 0.3.0 bump)",
+          sha(''.join(r['source_text'] + '\x1e' for r in rows).encode('utf-8')).hexdigest() ==
+          'd3df6b67ef81eb0718f4de7223e7993e4fa8c8b5968bc1f059a8729c4ad2b1e9')
+    check("payload sha256 pinned (moved WITH the 0.3.0 placeholder model, by intent)",
+          sha(EB.serialize(rows)).hexdigest() ==
+          '3196a0557ebbf7b651694d3b4b45a3a074e89f05dddfdd5456a08572bdc0d7a0')
+    check("bundle_version declares 0.3.0 — the only discriminator a consumer has",
+          EB.BUNDLE_VERSION == '0.3.0')
 
 
 def test_real_corpus():
@@ -301,7 +388,8 @@ def test_real_corpus():
 
 
 if __name__ == '__main__':
-    test_parser(); test_placeables(); test_placeable_spans(); test_translatable_units(); test_validate()
+    test_parser(); test_placeables(); test_placeable_spans(); test_placeable_tokens()
+    test_translatable_units(); test_validate()
     test_labels(); test_cross_locale(); test_export_bundle(); test_real_corpus()
     print("\n--- drift audit (labels) ---"); test_real_corpus_drift()
     print(f"\n{n['pass']} passed, {n['fail']} failed")

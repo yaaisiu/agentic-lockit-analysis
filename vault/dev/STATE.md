@@ -1,11 +1,44 @@
 ---
 type: dev-state
-updated: 2026-07-10
+updated: 2026-07-31
 phase: 6
-active_lockit: none
+active_lockit: veloren
 ---
 
 # STATE — you are here
+
+## s007 — BUNDLE EXPORTER: Cartographer's first downstream consumer (DONE, 2026-07-31)
+**A new capability, not a new lockit.** We now produce a **normalized bundle** (manifest.json +
+lines.jsonl) for the sibling **Lockit Annotator** (`~/lockit-annotator`), against its DRAFT v0.2
+contracts. No gates fired, but the foundation parser changed, so the migration was *proven*.
+- **`placeables()` now returns `(start, end, inner)`** — offsets were discarded, and `.strip()`
+  made the value differ from the real slice on **495 of 1267** placeables, so nothing could be
+  re-anchored. Unterminated `{` is no longer emitted (it used to invent a token ending nowhere;
+  as a *span* that becomes a mask over the rest of the string). **Migration proof: inventory /
+  report / validate / labels --audit are byte-identical to a pre-change baseline.**
+- **`source_text` = the reader's documented normalisation**, not a verbatim slice — declared in
+  `producer_version` and **pinned by a payload sha256 in the tests**, because the risk was never
+  nondeterminism but a future parser edit silently moving 7,131 strings.
+- **Census reconciled with the consumer's own numbers:** 7,131 rows = 6,359 non-empty + 772 blank
+  (424 valueless container messages are not units); 48 files; 1,267 placeholders; 0 drift. Units
+  that are entirely one placeable: **772 empty + 24 not empty** — the 24 matched the Annotator's
+  independent measurement exactly. **Their importer (`load_bundle`) accepts the bundle.**
+- **Counted, then checked:** the census said `function 1` where the vault said 2 — the two cited
+  "call sites" are `#` COMMENTS about `TAIL()`. Notes corrected (also `771 {""}` → **772**: one
+  spelling had been counted, not the construct). *A comment is not a placeable.*
+- **`##`/`###` section markers captured** as `context.section`: **3,979 of 7,131 rows** gain one
+  (vs 11 with a `#` comment). Consecutive marker lines join — keeping only the last had made
+  "Feel free to ignore them." the corpus's most common section, on 564 entries.
+- **Sibling repo treated as READ-ONLY.** Found a real bug in their fixture (`regenerate.py`
+  hashes `source_id` into `line_id`, contradicting their own schema) — **reported, not fixed**;
+  Marcin fixes it there. Other contract gaps flagged rather than approximated (see session note).
+- Tests **50 → 93**. Commits `52c8768`, `5187626`, `7a457b7`, `2113b09`.
+- **Backlog G6 added (direction, not scheduled):** a **converter-GENERATOR skill** — the consumer
+  publishes an information package (schemas + construct-mapping guide) and Cartographer *generates*
+  the converter. `export_bundle.py` is the first instance, hand-written; G6 is the generalisation.
+- **NEXT — Marcin's call.** 7 library promotions await approval (see the session note); then the
+  parked tracks: A1 cross-locale on a real translation · char-limit hunt (F4) · Polish-audit ·
+  F5/F6 security · G1/G2 generators · F7 doc-freshness · or build **G6**.
 
 ## s006 — WENT PUBLIC + doc reconciliation (DONE + PUSHED), 2026-07-10
 **Not a lockit session — the release close-out.** Marcin's legal check cleared; flipped the repo

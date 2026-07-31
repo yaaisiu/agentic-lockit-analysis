@@ -5,45 +5,52 @@
 >
 > Context: s000 Wesnoth (gettext). s001 corpus-wide + cross-locale QA. s002 Veloren (Fluent). s003
 > A Dark Forest (Godot CSV). s004 HoI4 (Clausewitz) — first proprietary lockit. s005 public-release
-> prep (licences, attribution, README, field guide; pushed private). **s006 — went PUBLIC + doc
-> reconciliation.**
+> prep. s006 went PUBLIC + doc reconciliation. **s007 — the bundle exporter: Cartographer's first
+> downstream consumer.**
 
 ## Where we are
-- **Repo is PUBLIC:** `github.com/yaaisiu/agentic-lockit-analysis` — flipped 2026-07-10 after a clean
-  pre-flight. Description ✓, Apache-2.0 ✓, 10 discoverability topics ✓. Marcin does the LinkedIn post
-  in another tool. (Cosmetic open item: the "Unknown licence" badge — `LICENSE-docs.md` is prose, not
-  verbatim CC-BY text; rename-out-of-glob fix deferred, Marcin's call.)
-- **The release track is closed.** Four lockits, four formats, all gated + tooled + QA-capable.
-  Library: 3 recognisers, 4 conventions, reader templates, origin-labeling + two-tier drift,
-  morphology-location, length-reference. No client data ever ships (`data/**`, `sources/**` gitignored).
+- **Four lockits, four formats, all gated + tooled.** Plus, new in s007, a **producer** role:
+  `scripts/veloren/export_bundle.py` emits a normalized bundle (manifest.json + lines.jsonl) for
+  the sibling **Lockit Annotator**, accepted by that project's own importer. Veloren tests 50 → 93.
+- **The parser changed and the change was proven, not asserted.** `placeables()` returns
+  `(start, end, inner)`; `inventory`/`report`/`validate`/`labels --audit` are byte-identical to a
+  baseline captured before the edit. Keep that habit for any future foundation change.
+- **Repo is PUBLIC** (`github.com/yaaisiu/agentic-lockit-analysis`). Treat every commit as
+  outward-facing. Nothing is pushed yet from s007 — `git push` is `ask`-gated.
 
-## THE NEXT SESSION — Marcin's call (no gate mid-flight)
-Pick one; all are prepared:
+## FIRST — 7 library promotions await approval
+s007 proposed them; **none are applied**. They are listed with rationale in
+`vault/dev/sessions/007-veloren-bundle-exporter.md`. In short: sync the promoted Fluent template's
+`placeables()` to spans; a `construct-spans-not-tokens` heuristic; a `byte-stable-artifact`
+convention + a `byte_stable_jsonl.py` template; and three updates
+(`construct-origin-labeling`, `fluent-ftl`, `outlier-hunting`). Approve/reject each, then apply
+and commit citing s007.
 
-1. **Resume lockit work (the deferred track).** Any of: the **char-limit hunt** (the one untested §5
-   anatomy — needs a clean source); a **new format** (JSON/`.arb`/`.strings`/xliff) to keep testing
-   library speed-up; **run the prepared cross-locale tools on a real translation** (backlog A1 — the
-   first "our tool caught a real bug in a delivery" report); or start the **Polish-audit** track
-   (morphology-location makes HoI4 a sharp test case).
+## THEN — Marcin's call (no gate mid-flight)
+1. **G6 — the converter-GENERATOR skill** (new in the backlog, the biggest idea from s007).
+   `export_bundle.py` is a one-off written by hand against one consumer's schemas. G6 inverts it:
+   the **consumer publishes an information package** (schemas + a construct-mapping guide) and
+   Cartographer *generates* the converter. Open questions are recorded in `vault/dev/backlog.md`.
+   Note **F6** (generated-script safety gate) probably gates its output.
+2. **Resume lockit work.** A1 (run the prepared cross-locale tools on a real translation — the
+   first "our tool caught a real bug in a delivery" report) · the char-limit hunt (F4, the one
+   untested §5 anatomy) · a new format (JSON/`.arb`/`.strings`/xliff) · the Polish-audit track.
+3. **Security F5/F6** — input hardening (injection-aware profiling) and/or the generated-script
+   safety gate. Neither built; F6 is now also a prerequisite for G6.
+4. **QA-generators G1/G2** (translator brief, pseudo-loc) or **F7** (doc-freshness check).
 
-2. **Security hardening (F5/F6).** Input side (F5: delimit/quote samples at the discover step; an
-   injection-pattern scanner over sampled strings) and/or output side (F6: an AST safety linter for
-   generated scripts + a GATE-2 checklist, ideally via a scoped script-reviewer subagent). Both
-   documented in `vault/dev/backlog.md`; neither built.
+## Carried forward from s007
+- **Contracts are DRAFT v0.2.** At ratification: re-export and **re-pin the payload sha256** in
+  `tests/test_toolkit.py`. Never re-pin reflexively — a moved hash means `source_text` moved.
+- **`~/lockit-annotator` is read-only for us.** Marcin is fixing the fixture bug we reported
+  (`regenerate.py` hashes `source_id` into `line_id`, contradicting their schema) on that side.
+- Per-attribute `line_no` is still the parent entry's line (~4 lines to fix if it ever matters).
 
-3. **QA-generators (Theme G) — the "help the process" deliverables.** G1 translator-brief generator
-   (auto-produce the reference doc clients never provide — column/construct meanings, rules, and what
-   the format *can't* control, e.g. Polish case/gender from morphology-location); G2 pseudo-loc
-   generator. High-value, deterministic, stdlib-only.
-
-4. **Hygiene (small):** build **F7** (doc-freshness / repo-truth check) so doc-vs-reality drift like
-   s006's stale "private" claims is caught automatically at `/wake` + `/retro`.
-
-## Guardrails carried forward
+## Guardrails
 - Proprietary data (HoI4) stays gitignored; committed notes stay synthetic; never a real string ships.
 - Library/CLAUDE.md/skill changes are proposed → approved → applied, never silent.
-- The repo is public now — treat every commit as outward-facing; `git push` is `ask`-gated, confirm first.
+- Bundle output is an extraction artifact → gitignored `data/`. `git push` is `ask`-gated.
 
 ## Flow
-`/wake` → confirm with Marcin which track (lockit / security / QA-gen / hygiene) → work it through the
-gates → commit per unit → confirm before `git push`.
+`/wake` → clear the 7 promotions → pick a track → work it through the gates → commit per verified
+unit (attach the proof to the message) → confirm before `git push`.

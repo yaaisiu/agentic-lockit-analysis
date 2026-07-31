@@ -39,7 +39,7 @@ def build(target):
 
     for u in F.iter_units(entries, include_empty=True):
         text = u['text']
-        for p in F.placeables(text):
+        for _s, _e, p in F.placeables(text):
             kind, detail = F.classify_placeable(p)
             inv[kind][detail] += 1
             if kind == 'var':

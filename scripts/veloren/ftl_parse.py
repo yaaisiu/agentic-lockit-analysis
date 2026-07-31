@@ -187,7 +187,34 @@ def parse_tree(target):
 
 # ---- placeables -----------------------------------------------------------------
 def placeables(text):
-    """Top-level { … } contents in order (brace-matched, quote-aware)."""
+    """Top-level { … } SPANS in order (brace-matched, quote-aware) -> [(start, end, inner)].
+
+    WHY SPANS (not just the inner text): a placeable has to be RE-ANCHORABLE in the string
+    it came from. The bundle contract we export to (lockit-annotator contracts/
+    line.schema.json) requires every placeholder to carry (start, end, token) with
+    source_text[start:end] == token EXACTLY, delimiters included — and offsets are what an
+    annotation is stored against. This function used to return only text[i+1:j-1].strip(),
+    which threw the offsets away AND made the value differ from the real source slice on 495
+    of this corpus's 1267 placeables (any `{ $x }` with inner spacing). Nothing could be
+    re-anchored from that.
+
+    `inner` is still STRIPPED, because classify_placeable / selector_variant_keys /
+    labels.label_placeable are all written against the stripped form; the exact source slice
+    is text[start:end], so nothing is lost. Callers wanting only the inner text write:
+        for _s, _e, p in placeables(t):
+
+    An UNTERMINATED placeable is NOT emitted (we stop scanning). The old code appended
+    text[i+1:n-1] — inventing a token that ends nowhere and silently dropping the last
+    character. As a SPAN that becomes a mask swallowing the rest of the string, which is far
+    worse than absence. Unbalanced braces are a structural defect and validate.py already
+    reports them as an ERROR; that stays the channel a human hears about it. (0 in the
+    Veloren en corpus.)
+
+    NOTE for nesting: this is TOP-LEVEL only, by design — the bundle contract's v0.2
+    containment model lists top-level placeables only, and a selector is ONE span covering
+    its variant text. validate.py recurses into selector bodies for its own checks; spans
+    from that recursion are relative to the inner string, not to the unit.
+    """
     out = []; i = 0; n = len(text)
     while i < n:
         if text[i] == '{':
@@ -202,7 +229,9 @@ def placeables(text):
                 elif c == '{': depth += 1
                 elif c == '}': depth -= 1
                 j += 1
-            out.append(text[i + 1:j - 1].strip())
+            if depth:                       # unterminated → not a placeable
+                break
+            out.append((i, j, text[i + 1:j - 1].strip()))
             i = j
         else:
             i += 1

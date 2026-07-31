@@ -153,7 +153,11 @@ def audit(target):
             if orig == UNKNOWN:
                 unknown_attrs[name] += 1; loc.setdefault(('attr', name), f"{e.file}:{e.line}")
     for u in F.iter_units(entries, include_empty=True):
-        for p in F.placeables(u['text']):
+        # NOTE: placeables() yields (start, end, inner) — unpack. If you leave `p` as the
+        # tuple, `p[:40]` below still "works" (a tuple slice is hashable, so the Counter
+        # accepts it) and this audit silently starts reporting (12, 20, '$x') instead of the
+        # construct. Every other call site would raise; this one would not. Pinned by a test.
+        for _s, _e, p in F.placeables(u['text']):
             kind, orig, detail, _ = label_placeable(p, F.classify_placeable)
             ctx = f"{u['file']}:{u['line']} {u['id']}"
             if kind == 'function' and orig == UNKNOWN:

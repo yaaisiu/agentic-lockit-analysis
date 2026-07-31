@@ -85,6 +85,32 @@ def test_placeables():
     check("variant keys w/ default flag", keys == [('1', False), ('other', True)])
 
 
+def test_placeable_spans():
+    """The (start, end, inner) contract. WHY: the bundle exporter anchors every placeholder
+    to source_text[start:end], so an offset that is off by one — or a scanner that invents a
+    span for an unterminated brace — corrupts a stored annotation, silently."""
+    print("[placeables — spans (bundle contract)]")
+    check("span + inner returned", F.placeables('a { $x } b') == [(2, 8, '$x')])
+    t = 'x { $x } y'
+    s, e, inner = F.placeables(t)[0]
+    check("slice is the VERBATIM token incl. braces", t[s:e] == '{ $x }')
+    check("the strip trap: '{'+inner+'}' != the slice", '{' + inner + '}' != t[s:e])
+    check("inner is still the stripped str (call sites unpack)",
+          isinstance(F.placeables('{ $x }')[0][2], str))
+    check("{\"\"} span covers all 4 chars", F.placeables('{""}') == [(0, 4, '""')])
+    check("unterminated placeable is NOT emitted", F.placeables('hi { $x') == [])
+    nested = '{ $toggle -> [0] off { $key } *[other] on }'
+    sp = F.placeables(nested)
+    check("nested selector yields exactly 1 top-level span", len(sp) == 1)
+    check("that span covers the whole selector", (sp[0][0], sp[0][1]) == (0, len(nested)))
+    multi = 'a { $x } b { -term } c'
+    sp = F.placeables(multi)
+    check("multiple spans ascending + non-overlapping",
+          [x[0] for x in sp] == sorted(x[0] for x in sp) and sp[0][1] <= sp[1][0])
+    check("every span re-slices to a brace-delimited token",
+          all(multi[a:b][0] == '{' and multi[a:b][-1] == '}' for a, b, _ in sp))
+
+
 def test_translatable_units():
     print("[translatable units]")
     ents = F.parse_text(FIX, 'fix.ftl')
@@ -168,6 +194,66 @@ def test_cross_locale():
     check("variant .aN dropped $key NOT flagged (unsound index match)", 'key' not in msgs)
 
 
+def test_export_bundle():
+    """The bundle contract. WHY: source_text is NORMATIVE — every stored annotation is an
+    offset into it — so the two things that must never drift silently are the identity
+    (a pure function of native_ref, not of line numbers) and the payload bytes."""
+    print("[export bundle — contract + byte stability]")
+    import tempfile, export_bundle as EB
+    d = tempfile.mkdtemp()
+    open(os.path.join(d, 'fix.ftl'), 'w', encoding='utf-8').write(FIX)
+    rows, per_file, stats, kinds, origins, problems, root = EB.build_rows(d)
+    files = EB.build_files_index(d, root, per_file)
+    check("build: 0 span/inner disagreements", not problems)
+    check("self-check clean on the fixture", not EB.verify_rows(rows, files))
+    check("container message with no value is not a row",
+          all(r['source_text'] != '' for r in rows))
+    check("{\"\"} row is empty:true with a literal placeholder",
+          any(r.get('empty') and r['placeholders'][0]['kind'] == 'literal' for r in rows))
+    check("origin is mapped to the contract enum (fluent -> spec)",
+          all(p['origin'] in EB.ORIGINS for r in rows for p in r['placeholders']))
+    check("TAIL-style project origin survives the map", EB.ORIGIN_MAP['project'] == 'project')
+    check("unknown origin passes through UNCHANGED", EB.ORIGIN_MAP['unknown'] == 'unknown')
+    # identity purity: shifting every line must not move a single line_id
+    d2 = tempfile.mkdtemp()
+    open(os.path.join(d2, 'fix.ftl'), 'w', encoding='utf-8').write('\n\n\n' + FIX)
+    rows2 = EB.build_rows(d2)[0]
+    check("line_id is a pure function of native_ref (line shift changes nothing)",
+          [r['line_id'] for r in rows] == [r['line_id'] for r in rows2])
+    check("...and line_no DID move (so the test is not vacuous)",
+          [r['line_no'] for r in rows] != [r['line_no'] for r in rows2])
+    check("line_id unique", len({r['line_id'] for r in rows}) == len(rows))
+    payload = EB.serialize(rows)
+    check("payload: LF only, no BOM, exactly one trailing newline",
+          not EB.verify_payload_bytes(payload))
+    check("payload is byte-stable across two serialisations", EB.serialize(rows) == payload)
+    check("payload has no literal newline inside a row",
+          len(payload.split(b'\n')) - 1 == len(rows))
+
+    if not os.path.isdir(REAL):
+        return
+    print("[export bundle — real-corpus pins]")
+    rows, per_file, stats, kinds, origins, problems, root = EB.build_rows(REAL)
+    files = EB.build_files_index(REAL, root, per_file)
+    check("7131 rows (6359 non-empty + 772 blank)", len(rows) == 7131 and stats['empty'] == 772)
+    check("424 container messages skipped", stats['skipped_absent_value'] == 424)
+    check("48 files in the inventory", len(files) == 48)
+    check("1267 placeholders", stats['placeholders'] == 1267)
+    check("kinds pinned", dict(kinds) == {'var': 454, 'selector': 26, 'term-ref': 13,
+                                          'function': 1, 'literal': 773})
+    check("origins pinned (1266 spec + 1 project)", dict(origins) == {'spec': 1266, 'project': 1})
+    check("0 drift: no unknown origin, no role=other",
+          stats['unknown_origin'] == 0 and stats['role_other'] == 0)
+    check("entirely one placeable: 772 empty + 24 non-empty",
+          (stats['fully_masked_empty'], stats['fully_masked_nonempty']) == (772, 24))
+    check("real corpus self-check clean", not EB.verify_rows(rows, files))
+    # THE pin: if a parser change moves source_text, this fails instead of a frozen
+    # benchmark silently re-anchoring. Regenerate deliberately, never reflexively.
+    check("payload sha256 pinned",
+          __import__('hashlib').sha256(EB.serialize(rows)).hexdigest() ==
+          'ad9fb439827ebc1e652a78733f07462aaf75c5054898d47e3cad4e48462a648d')
+
+
 def test_real_corpus():
     if not os.path.isdir(REAL):
         print(f"[real corpus] SKIP — {REAL} not present"); return
@@ -193,8 +279,8 @@ def test_real_corpus():
 
 
 if __name__ == '__main__':
-    test_parser(); test_placeables(); test_translatable_units(); test_validate()
-    test_labels(); test_cross_locale(); test_real_corpus()
+    test_parser(); test_placeables(); test_placeable_spans(); test_translatable_units(); test_validate()
+    test_labels(); test_cross_locale(); test_export_bundle(); test_real_corpus()
     print("\n--- drift audit (labels) ---"); test_real_corpus_drift()
     print(f"\n{n['pass']} passed, {n['fail']} failed")
     sys.exit(1 if n['fail'] else 0)

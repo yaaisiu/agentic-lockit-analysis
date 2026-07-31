@@ -2,14 +2,14 @@
 type: lockit-toolkit
 lockit: veloren
 skill: lockit-veloren-toolkit
-updated: 2026-07-06
+updated: 2026-07-31
 ---
 
 # Veloren — toolkit index
 
 Deterministic Fluent tools in `scripts/veloren/`, packaged as skill `lockit-veloren-toolkit`
 (GATE 2 cleared, session 002). All dependency-free, import the shared reader `ftl_parse.py`,
-run from `scripts/veloren/`. **50 tests pass.** Read [[profile]] before use; if structure
+run from `scripts/veloren/`. **83 tests pass.** Read [[profile]] before use; if structure
 changed, re-profile first.
 
 | script | what it does | example | tested |
@@ -23,9 +23,22 @@ changed, re-profile first.
 | `validate_placeholders.py` | cross-locale invariants (source vs translation) | `python3 validate_placeholders.py ../../data/veloren/en ../../sources/…/pl --warn` | ✅ 0 false-pos |
 | `report_all_locales.py` | technical-defect sweep over all locales → markdown | `python3 report_all_locales.py ../../data/veloren/en ../../sources/veloren/assets/voxygen/i18n out.md` | ✅ 39 locales |
 | `labels.py` | labeling registry (fluent/project/unknown) + drift audit | `python3 labels.py --audit ../../data/veloren/en` | ✅ 0 unknown |
-| `tests/test_toolkit.py` | synthetic fixtures + real-corpus census pins | `python3 tests/test_toolkit.py` | ✅ 50/50 |
+| `export_bundle.py` | emit a **normalized bundle** (manifest.json + lines.jsonl) for Lockit Annotator; `--check` re-verifies + proves byte-stability | `python3 export_bundle.py ../../data/veloren/en` | ✅ 7131 rows, 0 problems |
+| `tests/test_toolkit.py` | synthetic fixtures + real-corpus census pins | `python3 tests/test_toolkit.py` | ✅ 83/83 |
 
 ## Notes
+- **Bundle export (session 007)** — `export_bundle.py` produces the input format the sibling
+  Lockit Annotator consumes (DRAFT v0.2 contracts). Two things make it different from every
+  other script here: its output is **normative** (annotations are stored as character offsets
+  into the `source_text` *we* emit, so re-export must be byte-identical forever), and its
+  identity is a sha256 of `(kind, id, attr)` — never a line number. `source_text` uses the
+  reader's documented normalisation (strip + join with LF), declared in `producer_version`;
+  the payload hash is pinned in the tests so a parser change fails loudly instead of silently
+  re-anchoring stored annotations. It **refuses to export** a corpus with `validate.py`
+  ERRORs, because unbalanced braces make the scanner drop a placeable and the row would then
+  assert "no placeholder here" over a live substitution point. Output → gitignored
+  `data/veloren/bundle/`. Verified by the annotator's own importer (`load_bundle`): 7,131
+  lines, 772 empty, 796 fully masked, 6,335 annotatable, 0 untrusted placeholders.
 - **Labeling is the drift guardrail** ([[open-questions]] T-V5): `labels.py --audit` surfaces any
   construct unknown to our system. It already found the `enum` attribute role at GATE 2.
 - **Cross-locale sweep** produced `data/veloren/technical-defects.md` (gitignored): 81 real

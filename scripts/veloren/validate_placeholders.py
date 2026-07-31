@@ -99,9 +99,9 @@ def check_pair(src_dir, tr_dir):
             elif '->' not in tr_text:
                 add('WARN', key, "source has a selector { -> } but translation dropped it")
         # term references
-        src_terms = {d for p in F.placeables(src_text)
+        src_terms = {d for _s, _e, p in F.placeables(src_text)
                      for k, d in [F.classify_placeable(p)] if k == 'term-ref'}
-        tr_terms = {d for p in F.placeables(tr_text)
+        tr_terms = {d for _s, _e, p in F.placeables(tr_text)
                     for k, d in [F.classify_placeable(p)] if k == 'term-ref'}
         if tr_terms - src_terms:
             add('WARN', key, f"invented term ref(s): {sorted(tr_terms - src_terms)}")

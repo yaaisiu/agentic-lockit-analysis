@@ -66,7 +66,7 @@ def main(target):
     # placeholder one-liner (delegate detail to inventory.py)
     vs = collections.Counter()
     for u in units_all:
-        for p in F.placeables(u['text']):
+        for _s, _e, p in F.placeables(u['text']):
             vs[F.classify_placeable(p)[0]] += 1
     print("\nPLACEABLES:", ', '.join(f'{k}={c}' for k, c in vs.most_common()))
     print("  (detail: inventory.py · gender: gender_pairs.py · structural check: validate.py)")

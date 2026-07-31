@@ -42,7 +42,9 @@ def brace_balanced(text):
 
 def check_placeables(text, findings, ctx):
     """Recurse through placeables; validate selectors + flag unknowns."""
-    for p in F.placeables(text):
+    # placeables() returns (start, end, inner) spans; this checker only needs the inner text
+    # (its own spans would be relative to `text`, which is an inner string during recursion).
+    for _s, _e, p in F.placeables(text):
         kind, _ = F.classify_placeable(p)
         if kind == 'selector':
             keys = F.selector_variant_keys(p)

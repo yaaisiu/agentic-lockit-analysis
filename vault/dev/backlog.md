@@ -1,6 +1,6 @@
 ---
 type: dev-backlog
-updated: 2026-07-09
+updated: 2026-07-31
 ---
 
 # Backlog — where Lockit Cartographer could go
@@ -159,6 +159,32 @@ uses. All fit "help the process, don't replace translators"; all stdlib-only, no
   control chars, zero-width/homoglyph characters, mixed line endings, BOM inconsistency. *(S.)*
 - **G5. Standard interchange export (XLIFF / TMX)** — let the analysed lockit flow into translators'
   existing CAT tools. Philosophically central: feed the process, don't replace it. *(M.)*
+- **G6. "Prepare a converter" — a converter-GENERATOR skill (the method applied one level up).**
+  *Recorded s007 as a direction, not scheduled.* Today `scripts/veloren/export_bundle.py` is a
+  one-off, hand-written against one consumer's schemas. The generalisation: Cartographer gains a
+  **skill that generates a converter** from any analysed lockit toward any **declared target
+  format** — with "convert for Lockit Annotator" as the first instance rather than the only one.
+  - **The inversion that makes it work.** Cartographer does not learn each consumer. The
+    **consumer publishes an information package** — its schemas *plus* a construct-mapping guide —
+    and Cartographer loads that package as a **skill input**. The Annotator's `contracts/` +
+    `docs/EXPORTER_GUIDE.md` are the prototype of exactly such a package, and the guide exists
+    *precisely because JSON Schema cannot express which `kind` a given construct gets*. That
+    unexpressible half is the knowledge a generated converter needs; a schema alone is not enough.
+  - **Why it fits this repo's method.** It is the same **discover with the model, extract with
+    scripts** split, one level up: the model reads a target package + our existing chart
+    ([[profile]]/[[variables]]/`library/`) and *writes* the converter; the converter then runs
+    deterministically forever, cheap and local. It also matches how `library/` already works —
+    **recognise before re-inferring** — with target packages as a second recognisable input class
+    alongside source formats.
+  - **Open questions for whoever picks this up.** (1) How does a target package **declare
+    itself** — a manifest, a required file layout, a version? (2) Do generated converters go
+    through **GATE 2** like generated toolkits do — probably yes, and **F6**'s generated-script
+    safety gate applies directly. (3) Does the per-format **construct mapping** live in the
+    target's package or in our `library/conventions/`? (Arguably both: the target owns its
+    vocabulary, we own the recognisers that map ours onto it.)
+  - Relation to neighbours: **G5** (XLIFF/TMX) becomes one instance of this rather than a separate
+    build; **F6** gates the output; **F1** meters the generation step. *(L; the payoff is that the
+    Nth consumer costs a package, not a project.)*
 
 ## Suggested near-term order (Marcin decides)
 1. **A1** (run prepared cross-locale tools on a real translation) — proves translator value now.

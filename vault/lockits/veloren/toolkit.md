@@ -39,6 +39,14 @@ changed, re-profile first.
   assert "no placeholder here" over a live substitution point. Output → gitignored
   `data/veloren/bundle/`. Verified by the annotator's own importer (`load_bundle`): 7,131
   lines, 772 empty, 796 fully masked, 6,335 annotatable, 0 untrusted placeholders.
+  **This script is a one-off, written by hand against one consumer's schemas — the
+  generalisation is parked as backlog G6** ("prepare a converter": the consumer publishes an
+  information package — schemas + construct-mapping guide — and Cartographer *generates* the
+  converter). Read that entry before hand-writing a second exporter. See [[backlog]].
+- **`context` (session 007)** — `##`/`###` section markers are captured as `context.section`;
+  3,979 of 7,131 rows carry one, versus 11 with a `#` comment. Consecutive marker lines join
+  into one section (Veloren writes two-line blocks; keeping only the last line turned the
+  corpus's most common section into the fragment "Feel free to ignore them.").
 - **Labeling is the drift guardrail** ([[open-questions]] T-V5): `labels.py --audit` surfaces any
   construct unknown to our system. It already found the `enum` attribute role at GATE 2.
 - **Cross-locale sweep** produced `data/veloren/technical-defects.md` (gitignored): 81 real

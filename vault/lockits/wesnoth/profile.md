@@ -30,7 +30,14 @@ conventions are proposed for promotion in [[gettext-po]].
 - Format: gettext PO **template** (`.pot`), UTF-8, flat entry list (blank-line separated).
 - **All 32 textdomains, 26,312 entries** (~520k tokens). GATE 1 deep-profiled 4 domains
   (5,258 entries); session 001 confirmed the anatomy across the remaining 28 with no
-  re-profiling — **ids 26,312/26,312 unique, 0 collisions**.
+  re-profiling — **`internal_id` 26,312/26,312 unique, 0 collisions**.
+  > **An identity proof is a proof about ONE function (added s008, 2026-08-21).** The result
+  > above measures `po_parse.internal_id` — 10 hex chars over
+  > `domain ⋮ msgctxt ⋮ msgid ⋮ plural`. It says nothing about any other id over any other
+  > preimage. s008 minted a *second* id for bundle export, `segment_id` (12 hex over
+  > `msgctxt|msgid_raw`), and had to measure it separately: **also 26,312/26,312 unique, 0
+  > collisions**, but that is a second result, not the same one. Whenever a count like this is
+  > quoted, name the function it covers — otherwise good news reads as coverage it does not have.
 - Per file: a header entry (empty `msgid`) then entries of `msgid` (+ optional
   `msgid_plural`) with `#. #: #, #|` comments; `msgstr` empty in templates (filled per
   locale in the `.po`). Details: [[structure]].

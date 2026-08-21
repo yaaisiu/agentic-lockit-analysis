@@ -60,8 +60,11 @@ All Round-1 claims confirmed with corrections below; full evidence in
 ### Phase 6 — corpus-wide generality + multi-language (2026-07-02, session 001)
 Ran the finished toolkit over **all 32 domains** with no re-profiling; extended it (Marcin
 approved "cover all 3" families). decided_by: Marcin · gate: post-GATE-2 extension.
-- **Anatomy holds corpus-wide — CONFIRMED.** 26,312 strings, **internal ids 26,312/26,312
+- **Anatomy holds corpus-wide — CONFIRMED.** 26,312 strings, **`internal_id` 26,312/26,312
   unique, 0 collisions**. The GATE 1 identity model is lossless at full scale.
+  *(s008, 2026-08-21: this result covers `internal_id` and nothing else. The bundle exporter's
+  `segment_id` is a different function over a different preimage and was measured on its own —
+  also 0 collisions over the same 26,312. Naming the function is part of quoting the number.)*
 - **Three markup systems, domain-separated — DOCUMENTED.** Pango (29 game domains),
   **DocBook** (`wesnoth-manual`), **po4a/POD man** (`wesnoth-manpages`). `validate_markup`
   now auto-selects the family; full corpus → 1 real source defect, 0 false positives.

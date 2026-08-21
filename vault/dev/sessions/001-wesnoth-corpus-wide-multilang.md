@@ -21,6 +21,11 @@ they were created mid-session so the file-watcher never picked them up. Fix: `/r
 (no restart needed). Also normalised their frontmatter to the documented form. Not a file bug.
 
 ### Part 1 — generality across all 32 domains (no re-profiling)
+> **Forward-pointer (added s008, 2026-08-21 — history preserved, not rewritten):** the id
+> measured below is `po_parse.internal_id`. s008 minted a second id (`segment_id`, for bundle
+> export) over a different preimage and had to measure it separately. The result here does not
+> transfer to it. See [[../../lockits/wesnoth/profile|profile]] § Shape.
+
 - Ran `report.py` over all 32 `.pot`: **26,312 strings, ids 26,312/26,312 unique, 0
   collisions** — the GATE 1 identity model is lossless at full scale. Anatomy holds.
 - The wider corpus revealed structure the 4-domain subset never saw. Extended the toolkit

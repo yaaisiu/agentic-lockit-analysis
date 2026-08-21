@@ -1,11 +1,54 @@
 ---
 type: dev-state
-updated: 2026-07-31
+updated: 2026-08-21
 phase: 6
-active_lockit: veloren
+active_lockit: wesnoth
 ---
 
 # STATE — you are here
+
+## s008 — WESNOTH BILINGUAL BUNDLE EXPORTER + we now PUBLISH the contract (DONE, 2026-08-21)
+**A second producer role, run as an unattended brief (TASK-I1).** No gates fired; the confirmed
+anatomy is unchanged. Cartographer exports a profiled gettext lockit as a normalized **bilingual**
+bundle for an MT-benchmarking consumer, and — new — **publishes the schema it emits** at
+`contracts/bundle.schema.json`, so a consumer validates against a producer-owned contract instead
+of guessing at one. Full detail: `vault/dev/sessions/008-wesnoth-bilingual-bundle-exporter.md`.
+- **Ownership settled (Marcin, 2026-08-21) and it is narrower than "we own the schema":** this
+  repo owns the **profile** (anatomy, the `segment_id` function, field meanings) because it is the
+  single producer both consumers key to; **each consumer owns its own bundle contract**. The
+  bilingual profile and the other consumer's span profile are different contracts **by design** —
+  do not converge them. We still never write into a consumer's repo.
+- **`segment_id` ≠ `internal_id` — the trap this session exists to avoid.**
+  `<textdomain>:sha1((msgctxt or "") + "|" + msgid_raw)[:12]`; `internal_id` is the same *shape*,
+  10 hex, a different preimage. Reusing it yields a bundle that validates, looks correct, and
+  **joins to nothing**. Four externally-computed vectors pinned; a stability test shifts every line
+  number and adds a plural and asserts no id moves.
+- **Wesnoth pl exported:** 26,312 rows · 0 `segment_id` collisions · 24,477,591 bytes ·
+  `content_hash f05b545f…` · `--check` **REPRODUCIBLE**. Tests **22 → 34**. Commit `c73f260`.
+- **`pool`:** eval 14,914 · untranslated 11,398 (9,647 empty + 1,751 fuzzy). **Six domains are 0%
+  translated** (5,874 rows) — they contribute nothing to an eval pool. 54 plurals, 0 arity
+  disagreements; 712 derived `msgctxt`; 1,211 rows where raw ≠ display.
+- **A1 advanced as a side effect: 22 real upstream placeholder defects across the full Polish
+  locale**, reconciling exactly with the existing validator (its four `wesnoth-lib` *findings* are
+  three *rows*). Two clusters are stale translations — English lost a variable, Polish kept it.
+  Surface, don't fix. `placeholder_check` exists so the curation step can label them.
+- **THE LESSON — a refusal must be keyed to something the output actually depends on.** The first
+  structural rule refused all 26,312 rows because two `pl.po` files lack a `Plural-Forms` header —
+  both domains have **zero plural entries**. Same defect class the brief had already carved out
+  once for cross-locale content findings. **Twice = a rule, not an incident.**
+- **Identity-proof hazard hardened.** Four notes said "26,312/26,312 unique, 0 collisions" without
+  naming which id. It measures `internal_id`; `segment_id` needed its own measurement (also 0).
+  `profile.md` / `toolkit.md` / `open-questions.md` corrected; s001 log annotated with a dated
+  forward-pointer. *Good news is a documentation hazard when it doesn't name what it covers.*
+- **G6 IS NOW WRITABLE** — the second hand-written exporter was the point. Diff yields **11 shared
+  items** (the generator's skeleton) vs **7 that must come from a target package**. Design written
+  into the backlog. Most transferable single rule: **vocabulary mapping at the boundary**.
+- **Flagged, not fixed:** the bilingual manifest has **no `bundle_version` discriminator** and the
+  closed field list forbids adding one — the exact absence that bit the Veloren contract at
+  0.2.0→0.3.0. Cheap now, expensive after the consumer's freeze.
+- **NEXT — Marcin's call.** **12 library promotions now await approval** (5 from s008 + s007's 7,
+  none of which landed). Then: the **curated slice** (next brief, gated, with a human) · **G6** ·
+  or the parked tracks.
 
 ## s007 — BUNDLE EXPORTER: Cartographer's first downstream consumer (DONE, 2026-07-31)
 **A new capability, not a new lockit.** We now produce a **normalized bundle** (manifest.json +

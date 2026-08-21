@@ -185,6 +185,38 @@ uses. All fit "help the process, don't replace translators"; all stdlib-only, no
   - Relation to neighbours: **G5** (XLIFF/TMX) becomes one instance of this rather than a separate
     build; **F6** gates the output; **F1** meters the generation step. *(L; the payoff is that the
     Nth consumer costs a package, not a project.)*
+  - **G6 IS NOW WRITABLE — the second instance exists (s008, 2026-08-21).** s007 recorded G6 as a
+    direction and warned it was "worth reading before anyone hand-writes a second exporter". s008
+    read it and hand-wrote the second one anyway, deliberately: *a generator that generalises over
+    exporters cannot be designed from a single instance.* Diffing
+    `scripts/veloren/export_bundle.py` (span-oriented, monolingual) against
+    `scripts/wesnoth/export_bundle.py` (token-oriented, bilingual) yields the generator's actual
+    design, and this is its input:
+    - **Eleven items shared verbatim or near-verbatim — the generator's fixed skeleton:**
+      (1) `serialize(rows)`, character-for-character identical, incl. the no-`sort_keys` reasoning;
+      (2) `verify_payload_bytes` (BOM / CR / NUL / trailing-newline / blank-line), format-independent;
+      (3) the three-verifier split `verify_rows` / `verify_manifest` / `verify_payload_bytes`, each
+      returning `list[str]`, all accumulated, then **one** refuse-to-write; (4) `lines.jsonl` written
+      before `manifest.json`; (5) `content_hash {algorithm, value, covers}` over the payload bytes as
+      written, verified by re-hashing bytes not a re-serialisation; (6) `--check <bundle-dir>
+      [<source-dir>]` → re-read, re-validate, re-export in memory, byte-compare; (7) `--dry-run` +
+      a census printed *before* the self-checks, so a refused run still says what it saw;
+      (8) closed vocabularies as module-level `frozenset`s checked in `verify_rows`, so a registry
+      growing a value makes the export **fail** rather than emit out-of-enum; (9) **vocabulary
+      mapping at the boundary** — map our labels onto the consumer's enum in the exporter, never
+      rename the registry to chase a consumer (`ORIGIN_MAP` / `CARET_SLUG`); (10) `ROW_KEYS` /
+      `MANIFEST_KEYS` tuples driving both key order and the `additionalProperties:false` check from
+      one declaration; (11) identity as a pure hash of a named tuple of fields, documented as *not*
+      the line number and *not* the file, with a shape assertion.
+    - **Seven items that must come from the target package — the part a JSON Schema cannot state:**
+      the field list, key order and which field is normative; whether text is verbatim or normalised;
+      **placeholders as spans vs plain tokens** (the deepest split, and why the two contracts do not
+      converge); monolingual vs bilingual (hence whether plurals need two sides); what counts as a
+      *structural* error vs a *content finding* (Veloren refuses on an unflattened selector;
+      refusing on the analogous defect in Wesnoth would export nothing); whether a `bundle_version`
+      discriminator exists; and the source-reading layer entirely.
+    - So a G6 generator emits items 1–11 as scaffolding, takes the seven as the package's
+      declaration, and leaves **only the row builder** to be written per (format, contract) pair.
 
 ## Suggested near-term order (Marcin decides)
 1. **A1** (run prepared cross-locale tools on a real translation) — proves translator value now.

@@ -194,37 +194,69 @@ the exact failure the "not the bare textdomain" rule exists to prevent.
 - G6's actual design (11 shared / 7 from the package) → `vault/dev/backlog.md`.
 - Memory (L1): [[refusal-scope-discipline]], [[identity-proof-names-its-function]].
 
-## Promotions proposed (awaiting approval — NOT applied)
+## Promotions — APPLIED (Marcin approved at this retro, 2026-08-21)
 
-s008's five, plus the **seven from s007 that are still unapplied** (see that note; none of them
-landed). Where the two overlap, s008 supplies a second instance, which is the evidence s007's
-proposals were missing.
+The standing debt is cleared: **s008's five and s007's seven, all applied in this retro.** s007
+proposed seven and none had landed; where the two lists overlap, s008 supplied the second
+instance that s007's proposals were missing, which is what made them safe to promote rather than
+generalise from one case.
 
-1. **NEW heuristic `refusal-scope-discipline`** — a refusal must be keyed to something the output
-   actually depends on, never to well-formed metadata; if you cannot name the field that becomes
-   unreliable, it is a reported number or a per-row verdict field. Two instances, consecutive
-   sessions. *(This is the strongest of the five.)*
-2. **NEW convention `producer-contract-ownership`** — when this repo produces for a consumer: we
-   own the **profile** (anatomy, identity function, field meanings), each consumer owns its
-   **bundle contract**, contracts for different consumers must not be converged, and we never
-   write into a consumer's repo. Settled with Marcin 2026-08-21; two consumers now exercise it.
-3. **NEW convention `derived-identity-keys`** — a bundle's join key is a pure function of a named
-   tuple of source fields, never of a locator; the toolkit's internal id and an export's id are
-   **different functions** and must not be conflated; pin vectors computed outside the repo; state
-   the preimage's injectivity precondition. (Absorbs the `|`-separator hazard as the worked
-   example.) Also fixes the documentation hazard by rule rather than by note.
-4. **STRENGTHEN s007's proposed convention `byte-stable-artifact`** (still unapplied) — s008 is the
-   second independent instance, and `serialize()` + `verify_payload_bytes()` are now provably
-   format-independent. Promote with the accompanying `byte_stable_jsonl.py` template s007 also
-   proposed.
-5. **STRENGTHEN s007's proposed update to `construct-origin-labeling`** — but promote **vocabulary
-   mapping at the boundary** to its own convention rather than a clause inside an origin-labelling
-   note. It now has two instances (`ORIGIN_MAP`, `CARET_SLUG`) and is broader than origin labels:
-   *map at the boundary, never rename the registry to chase a consumer.*
+**New conventions (4)**
+1. `conventions/byte-stable-artifact` — *(s007 proposed, s008 confirmed)* the eleven rules that
+   came out identical across two exporters: compose in memory as bytes, fixed key order and never
+   `sort_keys`, hash the bytes you wrote, rows before manifest, verify bytes as bytes, ship
+   `--check`, pin the hash twice (synthetic + real), declare any normalisation, byte-sort never
+   locale-sort, accumulate then refuse once, keep a version discriminator.
+2. `conventions/producer-contract-ownership` — we own the **profile**, each consumer owns its
+   **bundle contract**, don't converge contracts, never write into a consumer's repo, publish the
+   schema here and let theirs mirror; and what a schema *cannot* say must go in its descriptions.
+3. `conventions/derived-identity-keys` — an export's join key vs the toolkit's internal id;
+   publish the preimage character-for-character; pin externally-computed vectors; test against
+   everything the id must *not* depend on; **state the separator's injectivity precondition**
+   (the `|` hazard as the worked example).
+4. `conventions/boundary-vocabulary-mapping` — *(promoted out of s007's `construct-origin-labeling`
+   clause, because it is broader than origin labels and now has two instances)* map at the
+   boundary, never rename the registry to chase a consumer; pass `unknown` through unchanged;
+   assert against the contract's enum before writing.
+
+**New heuristics (3)**
+5. `heuristics/refusal-scope-discipline` — a refusal must be keyed to something the **output**
+   depends on. If you cannot name the field that would be wrong, it is a reported number or a
+   per-row verdict, not a refusal. Both instances written up, including this session's.
+6. `heuristics/identity-proof-scope` — a proof of identity is a proof about **one function**;
+   name the function and preimage in the same sentence; a second id of the same shape gets its
+   own measurement.
+7. `heuristics/construct-spans-not-tokens` — *(s007)* return `(start, end, text)`; and the second
+   half: a span used as a **mask** must never contain translatable text — state it operationally
+   ("the complement of the spans is exactly the translatable text") because subtraction is
+   something you can run. Includes when plain tokens are the right answer instead.
+
+**New template (1)**
+8. `script-templates/byte_stable_jsonl.py` — *(s007 proposed, s008 evidenced)* the byte layer as
+   working code: `serialize`, `verify_payload_bytes`, `script_hash`, `content_hash`,
+   `write_bundle` (rows first), `cmd_check` with the re-export byte-compare, and the
+   census→self-check→refuse-once export flow. Deliberately excludes the row builder, the field
+   list and the reader — the parts that legitimately differ per (format, contract) pair.
+
+**Updates to existing library notes (4)**
+9. `script-templates/ftl_parse_template.py` — *(s007)* `placeables()` now returns
+   `(start, end, inner)` spans, refuses to emit an unterminated placeable, and carries the
+   change-a-foundation-reader-safely rationale (change in place; prove with a byte-identical
+   baseline diff; watch for silent-unpack call sites).
+10. `heuristics/construct-origin-labeling` — *(s007)* exporting a labeled value: map at the
+    boundary, pass `unknown` through; cross-links to the new convention. `also_seen` += wesnoth.
+11. `conventions/fluent-ftl` — *(s007)* `##`/`###` section markers are structural context, not
+    prose to skip; join consecutive marker lines.
+12. `heuristics/outlier-hunting` — *(s007)* **count from the parser, not from grep**: a comment
+    is not a placeable; one *spelling* counted where the *construct* was meant (771 vs 772).
+    `also_seen` += veloren.
+
+**Also:** `library/glossary.md` gained eight terms — bundle, report vs artifact, normative field,
+join key / segment id, structural error vs content finding, boundary map, span vs token.
 
 ## Open threads
 
-- **The five above + s007's seven.** Twelve pending promotions is the largest debt in the repo.
+- **Promotions: none pending.** All twelve applied at this retro — the standing debt is cleared.
 - **G6** is now writable (design in the backlog); **F6** still gates its output.
 - **`bundle_version`** absent from the bilingual manifest — flagged, not fixed; cheapest to fix
   before the consumer's schema freeze.
@@ -237,4 +269,5 @@ proposals were missing.
 ## Commits
 
 - `c73f260` — feat(wesnoth): bilingual bundle exporter + publish the bundle contract (TASK-I1).
-- (this retro) — vault hardening + STATE s008 + session note + kickoff.
+- `f08a24b` — s008 retro: vault hardening + session note + STATE + kickoff.
+- (this retro, second commit) — library: apply all twelve promotions (s008's 5 + s007's 7).

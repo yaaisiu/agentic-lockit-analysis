@@ -3,7 +3,7 @@ type: heuristic
 id: construct-origin-labeling
 status: accepted
 first_seen: veloren
-also_seen: [a-dark-forest, hoi4]
+also_seen: [a-dark-forest, hoi4, wesnoth]
 promoted_session: "002"
 ---
 
@@ -70,6 +70,16 @@ constructs are `§X`/`§!`, `£icon`, `@TAG`, `$VAR$`/`$VAR|fmt$`, `[scope.fn]`,
 `part` meanings + key tag/suffix vocab are `project`. Verified: tier-1 drift = 0 across all 206
 HoI4 files / 129,087 entries.
 
+**Exporting a labeled value to a consumer (s007 proposed, s008 confirmed with a 2nd instance):**
+a downstream contract will spell these labels differently from us. **Map at the boundary — never
+rename this registry to chase a consumer**, because the registry also serves the inventory report,
+the vault note and the GATE-1 dossier, where a human reads it. And **pass `unknown` through
+UNCHANGED**: it is the drift signal telling the consumer not to trust the classification and to
+escalate to a reviewer, so a map that helpfully collapses it to a plausible neighbour destroys the
+only evidence that the lockit changed. Full rule, with both worked instances
+(`ORIGIN_MAP` for Fluent origins, `CARET_SLUG` for gettext caret families):
+[[boundary-vocabulary-mapping]].
+
 **Companion:** pairs naturally with [[outlier-hunting]] (actively look for the unexpected) and
 with any format convention ([[fluent-ftl]], [[gettext-po]], [[csv-tabular]], [[clausewitz-pdx-yaml]])
-whose constructs get labeled.
+whose constructs get labeled. On the export side: [[boundary-vocabulary-mapping]].

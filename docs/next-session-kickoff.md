@@ -24,25 +24,30 @@
 - **Repo is PUBLIC** (`github.com/yaaisiu/agentic-lockit-analysis`). Treat every commit as
   outward-facing. Nothing is pushed from s007 or s008 — `git push` is `ask`-gated.
 
-## FIRST — 12 library promotions await approval (the repo's largest standing debt)
-**s007 proposed seven; none were applied.** s008 proposes five more, and where they overlap s008
-supplies the *second instance* that s007's proposals were missing. Both lists are in their session
-notes (`007-veloren-bundle-exporter.md`, `008-wesnoth-bilingual-bundle-exporter.md`).
+## The library grew this retro — consult it BEFORE re-deriving
+All twelve pending promotions were applied at the s008 retro (s008's five, plus s007's seven,
+which had been pending a session). **Recognise before re-inferring** — if you are about to write
+an exporter, an identity function, or a refusal, these already exist:
 
-s008's five, strongest first:
-1. **NEW heuristic `refusal-scope-discipline`** — a refusal must be keyed to something the output
-   *actually depends on*, never to well-formed metadata. Bitten twice in consecutive passes.
-2. **NEW convention `producer-contract-ownership`** — we own the profile, each consumer owns its
-   bundle contract, don't converge contracts, never write into a consumer's repo.
-3. **NEW convention `derived-identity-keys`** — an export's join key is a different function from
-   the toolkit's internal id; pin externally-computed vectors; state the preimage's injectivity
-   precondition.
-4. **STRENGTHEN s007's `byte-stable-artifact`** (+ its `byte_stable_jsonl.py` template) — now
-   provably format-independent across two exporters.
-5. **PROMOTE "vocabulary mapping at the boundary" to its own convention** (s007 had it as a clause
-   inside `construct-origin-labeling`) — two instances now: `ORIGIN_MAP`, `CARET_SLUG`.
+- **`conventions/byte-stable-artifact`** — the eleven rules two exporters agreed on. Start here
+  for anything another system will store and join against.
+- **`conventions/producer-contract-ownership`** — we own the *profile*, each consumer owns its
+  *bundle contract*, contracts don't converge, we never write into a consumer's repo.
+- **`conventions/derived-identity-keys`** — the export's join key is **not** the toolkit's
+  internal id; publish the preimage; pin external vectors; state the separator's precondition.
+- **`conventions/boundary-vocabulary-mapping`** — map our labels onto a consumer's enum *in the
+  exporter*; never rename the registry; pass `unknown` through.
+- **`heuristics/refusal-scope-discipline`** — name the output field a refusal protects, or it
+  isn't a refusal.
+- **`heuristics/identity-proof-scope`** — a collision proof covers one function; say which.
+- **`heuristics/construct-spans-not-tokens`** — return `(start, end, text)`; a span used as a
+  mask must never contain translatable text.
+- **`script-templates/byte_stable_jsonl.py`** — the byte layer as working code. A third exporter
+  should not hand-write `serialize()` again.
 
-Approve/reject each, then apply and commit citing the session that produced it.
+Updated too: `ftl_parse_template.py` (`placeables()` → spans), `construct-origin-labeling`,
+`fluent-ftl` (section markers), `outlier-hunting` (count from the parser, not grep), and the
+glossary (8 new terms).
 
 ## THEN — Marcin's call (no gate mid-flight)
 1. **The curated slice** — the next brief, and it *is* a gated session with a human: strata, the

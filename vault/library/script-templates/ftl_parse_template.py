@@ -144,7 +144,38 @@ def parse_tree(target):
 
 # ---- placeables -----------------------------------------------------------------
 def placeables(text):
-    """Top-level { … } contents in order (brace-matched, quote-aware)."""
+    """Top-level { … } SPANS in order (brace-matched, quote-aware) -> [(start, end, inner)].
+
+    WHY SPANS AND NOT JUST THE TEXT (changed s007; see [[construct-spans-not-tokens]]):
+    a placeable must be RE-ANCHORABLE in the string it came from. Anything downstream that
+    stores an annotation, a highlight, or a QA finding stores it as an OFFSET, and offsets
+    cannot be recovered later. This function used to return only `text[i+1:j-1].strip()`,
+    which threw the offsets away AND made the returned value differ from the real source
+    slice on 495 of one corpus's 1267 placeables (every `{ $x }` with inner spacing).
+    Nothing could be re-anchored from that, and the loss was invisible until someone needed it.
+
+    `inner` is still STRIPPED, because the classifiers are written against the stripped form;
+    the exact source slice is `text[start:end]`, so nothing is lost. Callers wanting only the
+    inner text write:  `for _s, _e, p in placeables(t):`
+
+    An UNTERMINATED placeable is NOT emitted (we stop scanning). The old code appended
+    `text[i+1:n-1]` — inventing a token that ends nowhere and silently dropping the last
+    character. As a SPAN that becomes a mask swallowing the rest of the string, which is far
+    worse than absence. Unbalanced braces are a structural defect; the validator is the
+    channel a human should hear about it on.
+
+    TOP-LEVEL ONLY, by design. A selector comes back as ONE span covering its variant bodies —
+    correct for counting and validation, WRONG for masking, because those bodies are
+    translatable prose. If your consumer subtracts spans from the text, you need a flattening
+    pass on top of this; see [[construct-spans-not-tokens]] § "a span used as a MASK".
+
+    CHANGING THIS IN A LIVE TOOLKIT: change it IN PLACE, never via a sibling function (a
+    duplicate brace scanner is exactly the drift this template exists to prevent), and PROVE
+    the migration — capture every downstream tool's output before the edit and diff for
+    byte-identity after. Watch for call sites where a missed unpack fails SILENTLY (one used
+    the result as a Counter key: a tuple is hashable, so it would have printed `(12, 20, '$x')`
+    instead of raising). Pin those with a test.
+    """
     out = []; i = 0; n = len(text)
     while i < n:
         if text[i] == '{':
@@ -159,7 +190,9 @@ def placeables(text):
                 elif c == '{': depth += 1
                 elif c == '}': depth -= 1
                 j += 1
-            out.append(text[i + 1:j - 1].strip()); i = j
+            if depth:
+                break                      # unterminated: emit nothing, don't invent a span
+            out.append((i, j, text[i + 1:j - 1].strip())); i = j
         else:
             i += 1
     return out

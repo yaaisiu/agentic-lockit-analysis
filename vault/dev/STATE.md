@@ -46,9 +46,15 @@ of guessing at one. Full detail: `vault/dev/sessions/008-wesnoth-bilingual-bundl
 - **Flagged, not fixed:** the bilingual manifest has **no `bundle_version` discriminator** and the
   closed field list forbids adding one — the exact absence that bit the Veloren contract at
   0.2.0→0.3.0. Cheap now, expensive after the consumer's freeze.
-- **NEXT — Marcin's call.** **12 library promotions now await approval** (5 from s008 + s007's 7,
-  none of which landed). Then: the **curated slice** (next brief, gated, with a human) · **G6** ·
-  or the parked tracks.
+- **LIBRARY: all 12 promotions APPLIED at the s008 retro** (s008's 5 + s007's 7, which had been
+  pending a session). The library grew by **4 conventions** (`byte-stable-artifact`,
+  `producer-contract-ownership`, `derived-identity-keys`, `boundary-vocabulary-mapping`),
+  **3 heuristics** (`refusal-scope-discipline`, `identity-proof-scope`,
+  `construct-spans-not-tokens`) and **1 template** (`byte_stable_jsonl.py`), plus 4 updates
+  (`ftl_parse_template` → spans, `construct-origin-labeling`, `fluent-ftl` sections,
+  `outlier-hunting` parser-not-grep) and 8 glossary terms. **Nothing pending.**
+- **NEXT — Marcin's call.** The **curated slice** (next brief, gated, with a human) · **G6** (now
+  writable, and the byte layer is already a template) · or the parked tracks.
 
 ## s007 — BUNDLE EXPORTER: Cartographer's first downstream consumer (DONE, 2026-07-31)
 **A new capability, not a new lockit.** We now produce a **normalized bundle** (manifest.json +

@@ -64,8 +64,23 @@ attribute names mean what, custom functions) need fresh inference. The gettext c
 per-locale directories named by BCP-47 tag. If gettext-detection says *not gettext* and you see
 `{ $… }` placeables + `.attr =` lines → reach for this convention (don't re-infer from scratch).
 
+## Section markers are structural context — capture them, don't discard them
+`##` (group) and `###` (file-level) comment lines are **not** prose to skip: they are the
+finest-grained structural signal Fluent offers, and the only one between "the whole file" and
+"one message". A reader that drops them throws away the classification hint a consumer's
+pre-pass wants — for one corpus, **3,979 of 7,131 units** carry a section versus **11** carrying
+an entry-level `#` comment, and the files are coarse (48 files over 7,131 units).
+
+**Join consecutive marker lines into one section.** Authors write multi-line blocks; keeping only
+the last line made an incidental closing aside the corpus's most common "section", on 564
+entries — a real signal turned into a fragment. (Synthetic illustration: `## Combat abilities` /
+`## Listed in the order the UI shows them.` is ONE section, not a section named after the second
+line.)
+
 ## Tooling guidance
-- Reader: [[ftl_parse_template]] (dependency-free). Cross-locale: [[cross-locale-invariants]]
-  (Fluent instance = `$var` set + selector presence + gender-attribute coverage).
+- Reader: [[ftl_parse_template]] (dependency-free) — note its `placeables()` returns
+  **`(start, end, inner)` spans**, not bare text ([[construct-spans-not-tokens]]). Cross-locale:
+  [[cross-locale-invariants]] (Fluent instance = `$var` set + selector presence +
+  gender-attribute coverage).
 - Label each construct fluent-native vs project-native, with an unknown bucket for drift:
   [[construct-origin-labeling]].

@@ -3,7 +3,7 @@ type: heuristic
 id: outlier-hunting
 status: accepted
 first_seen: veloren
-also_seen: [a-dark-forest, hoi4]
+also_seen: [a-dark-forest, hoi4, veloren]
 promoted_session: "002"
 ---
 
@@ -39,6 +39,16 @@ outliers early turns them into explicit gate decisions instead of latent bugs. I
    new rule.
 3. Bake the resolved outliers into the profile + the labeling registry so the *next* run
    recognises them.
+
+**Count from the PARSER, never from grep (veloren, s007).** A census that disagrees with a note
+is a finding, and the way to settle it is to ask the structure, not the text. Three vault notes
+said a custom function occurred twice; the parser said once. Both were right about what they
+measured — the two extra "call sites" were `#` **comments about** the function. *A comment is not
+a placeable.* Same session, same cause: `771` blanks vs the real `772` — one **spelling** (`{""}`)
+had been counted where the **construct** (`{""}` plus a spaced `{ "" }`) was meant. Grep counts
+strings; the parser counts constructs, and only the second is the number you want. When the two
+disagree, **confirm the cause before calling it benign** ([[verify-count-changes]]), then correct
+the note with a dated in-note annotation.
 
 **Reflex, not a one-off:** treat "what are the outliers here?" as a required step at recon and
 again at toolkit-build, on every lockit.

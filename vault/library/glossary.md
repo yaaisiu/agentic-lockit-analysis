@@ -2,7 +2,7 @@
 type: system-doc
 id: glossary
 status: active
-updated: 2026-07-06
+updated: 2026-08-21
 ---
 
 # Glossary (client-free)
@@ -33,3 +33,23 @@ Generalised terms. **No lockit content here** — definitions only.
   [[cross-locale-invariants]].
 - **nplurals** — the number of plural forms a language uses (from a `.po` `Plural-Forms`
   header); e.g. English/German 2, Polish 3. A translation must supply exactly this many.
+- **Bundle** — a normalized artifact this system *produces* for a downstream consumer that never
+  opens a raw lockit: a manifest plus one row per translatable unit. See [[byte-stable-artifact]].
+- **Report vs artifact** — a **report** is read once by a human and discarded; an **artifact** is
+  stored and joined against later by another system. A report describes; an artifact **promises**
+  the same input yields the same bytes forever. Different disciplines, not different polish.
+- **Normative field** — the field of an artifact a consumer anchors to (ids computed over it,
+  offsets stored into it). Everything **derived** from it — an unescaped display form, a
+  convenience duplicate — is **non-normative** and must be labelled so in the schema.
+- **Join key / segment id** — the id a *consumer* joins on. A pure function of a named tuple of
+  source fields, never of a locator, and **not** the same function as the toolkit's own internal
+  id even when it is the same shape. See [[derived-identity-keys]].
+- **Structural error vs content finding** — a **structural** error makes the rows untrustworthy
+  (refuse to emit); a **content finding** is well-formed data that says something wrong, usually
+  an upstream defect (never refuse — emit a per-row verdict). See [[refusal-scope-discipline]].
+- **Boundary map** — the one dict in an exporter that translates *our* vocabulary into a
+  consumer's enum, so the registry is never renamed to chase a consumer.
+  See [[boundary-vocabulary-mapping]].
+- **Span vs token** — a **token** is the construct's text; a **span** is `(start, end, text)`
+  against the string it came from. A span used as a *mask* must never contain translatable text.
+  See [[construct-spans-not-tokens]].

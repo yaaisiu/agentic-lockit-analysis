@@ -1,12 +1,15 @@
 ---
 name: lockit-wesnoth-toolkit
 description: >
-  Use to parse, inventory, extract, or validate the Wesnoth gettext lockit (.pot / .po) —
-  e.g. "parse a Wesnoth .pot", "list all placeholders/variables/{brace} tokens", "extract
-  gender (female^) forms", "pull one textdomain or ^-context prefix", "validate markup is
-  balanced (Pango / DocBook / po4a man)", "check a translation preserves $vars/plurals
-  (cross-locale)", "report what we know about the lockit". Wraps tested deterministic scripts
-  in scripts/wesnoth/; prefer these over ad-hoc parsing for any Wesnoth localisation file.
+  Use to parse, inventory, extract, validate, or EXPORT the Wesnoth gettext lockit
+  (.pot / .po) — e.g. "parse a Wesnoth .pot", "list all placeholders/variables/{brace}
+  tokens", "extract gender (female^) forms", "pull one textdomain or ^-context prefix",
+  "validate markup is balanced (Pango / DocBook / po4a man)", "check a translation preserves
+  $vars/plurals (cross-locale)", "report completeness per domain", "export a normalized
+  BILINGUAL bundle (manifest.json + lines.jsonl) for a downstream consumer", "check a bundle
+  / verify it is byte-reproducible", "report what we know about the lockit". Wraps tested
+  deterministic scripts in scripts/wesnoth/; prefer these over ad-hoc parsing for any
+  Wesnoth localisation file.
 allowed-tools: Bash(python3:*) Read Glob
 ---
 
@@ -47,9 +50,27 @@ scripts — reproducible, free, testable. Each script has a plain-language *why*
 - `python3 scripts/wesnoth/completeness.py <po-file-or-dir>` — **translation completeness** per
   domain/language: translated / fuzzy / untranslated (fuzzy ≠ done; a plural is done only when
   every form is filled). Needs `.po` translations, not `.pot`.
+- `python3 scripts/wesnoth/export_bundle.py <lockit> <locale> [<out-dir>] [--dry-run] [--force]`
+  — **export a normalized BILINGUAL bundle** (`manifest.json` + `lines.jsonl`) for a downstream
+  MT-benchmarking consumer. Contract: **`contracts/bundle.schema.json`**, which this repo owns
+  and publishes; a consumer's copy is a validating mirror. Reads `sources/<lockit>/po/<domain>/`
+  (`<domain>.pot` + `<locale>.po`), writes gitignored `data/bundles/<lockit>-<locale>/`.
+  Identity is **`segment_id` = `<textdomain>:sha1(msgctxt|msgid_raw)[:12]`** — a *different*
+  function from `po_parse.internal_id` (10 chars, different preimage); **never join on the
+  wrong one**. Refuses on **structural** errors (`--force` overrides); **never** refuses on
+  cross-locale content findings — those are per-row `placeholder_check` verdicts, because the
+  Polish locale legitimately contains years-old upstream placeholder bugs.
+  *(Prints counts only, never strings — but the bundle it writes is full lockit content and
+  stays under gitignored `data/`.)*
+- `python3 scripts/wesnoth/export_bundle.py --check <bundle-dir> [<source-po-root>]` — re-read a
+  written bundle, validate it, verify `content_hash` against the bytes on disk; with the source
+  root it **re-exports in memory and byte-compares** (REPRODUCIBLE or the first differing line).
+  *Standing rule: whoever rewrites `lines.jsonl` rewrites `manifest.json`.*
 
 ## Tests
-`python3 scripts/wesnoth/test_toolkit.py` (or `pytest scripts/wesnoth/`) — **22 tests**.
+`python3 scripts/wesnoth/test_toolkit.py` (or `pytest scripts/wesnoth/`) — **34 tests**
+(incl. the four pinned `segment_id` vectors, id stability, the byte-stable payload pin, and the
+self-checks' refusals).
 Synthetic fixtures (no lockit content) + an optional real-`.pot` integration check that skips
 if data is absent.
 

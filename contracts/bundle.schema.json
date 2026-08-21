@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/yasiu/agentic-lockit-analysis/contracts/bundle.schema.json",
+  "title": "Lockit Cartographer — bilingual gettext bundle",
+  "description": "The NORMATIVE contract for the BILINGUAL profile emitted by lockit-cartographer. A bundle is a directory holding exactly two files: lines.jsonl (one row object per line, UTF-8, LF, no BOM, exactly one trailing newline) and manifest.json (one manifest object). This file describes the bilingual gettext profile ONLY. It does NOT describe the span-oriented monolingual profile that scripts/veloren/export_bundle.py emits against a different consumer's contracts; the two are different contracts by design and must never be merged. This repository is the producer and owns this file; a consumer's copy is a validating mirror, and a divergence between them is a bug owned by whoever let the mirror drift. STANDING RULE: whoever rewrites lines.jsonl rewrites manifest.json in the same act. A row file that has moved while the manifest's content_hash has not is the one corruption nothing else in the chain can detect. lines.jsonl is therefore always written BEFORE manifest.json, so a torn run leaves a bundle with no manifest (rejected on sight) rather than a manifest asserting a hash for bytes that are not there.",
+  "type": "object",
+  "properties": {
+    "manifest": { "$ref": "#/$defs/manifest" },
+    "line": { "$ref": "#/$defs/line" }
+  },
+  "$defs": {
+    "manifest": {
+      "type": "object",
+      "description": "manifest.json — one object describing the whole bundle.",
+      "additionalProperties": false,
+      "required": ["game", "source_format", "source_locale", "target_locale", "upstream",
+                   "extraction_script_hash", "content_hash", "line_count", "generated_at",
+                   "cartographer_version", "textdomains"],
+      "properties": {
+        "game": {
+          "type": "string",
+          "description": "Stable slug of the game / dataset this lockit belongs to, e.g. \"battle-for-wesnoth\"."
+        },
+        "source_format": {
+          "type": "string",
+          "enum": ["gettext-po"],
+          "description": "The native lockit format the rows were read from. This profile is gettext only; another format gets its own contract, not a widened enum."
+        },
+        "source_locale": {
+          "type": "string",
+          "description": "BCP-47-ish tag of the source side, matching lines[].source_en. \"en\" for Wesnoth."
+        },
+        "target_locale": {
+          "type": "string",
+          "description": "BCP-47-ish tag of the target side, matching lines[].target_pl."
+        },
+        "upstream": {
+          "type": "object",
+          "description": "Provenance of the TREE the .po files were read from. All four are required and none may be fabricated: a bundle whose upstream cannot be established must not be written at all.",
+          "additionalProperties": false,
+          "required": ["remote", "commit", "branch", "po_revision_dates"],
+          "properties": {
+            "remote": { "type": "string", "description": "The upstream git remote URL, read from the checkout's .git/config." },
+            "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$", "description": "Full 40-hex commit of the checkout the rows were read from." },
+            "branch": { "type": "string", "description": "The branch the checkout is on." },
+            "po_revision_dates": {
+              "type": "object",
+              "description": "MAP, textdomain -> the PO-Revision-Date string from that domain's target .po header, verbatim. This is the ONE object in this schema that is not closed: its keys are exactly the bundle's textdomains[], which are data and cannot be listed in a schema written in advance. It is typed as a string map rather than left open, and no second exception exists anywhere in this file. A domain whose header carries no PO-Revision-Date is present with an empty string, never absent.",
+              "additionalProperties": { "type": "string" }
+            }
+          }
+        },
+        "extraction_script_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "sha256 over the CONCATENATED BYTES of the exporter script AND every first-party module it imports, in ascending byte order of their repository-relative POSIX paths. Hashing the exporter alone would pin one file and leave the PO parser free to move underneath it, which is the change most likely to alter what a row says while the exporter's own bytes stay put. The producer reports the exact file list with every export."
+        },
+        "content_hash": {
+          "type": "object",
+          "description": "sha256 over the payload bytes of lines.jsonl EXACTLY AS WRITTEN — not over a re-serialisation of the parsed rows, which would hide a text-mode write, a BOM, or CRLF. Verifying it is a byte read plus one digest, which is what makes 'the rows moved and the manifest did not' detectable at all.",
+          "additionalProperties": false,
+          "required": ["algorithm", "value", "covers"],
+          "properties": {
+            "algorithm": { "type": "string", "enum": ["sha256"] },
+            "value": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "64 lowercase hex characters, no algorithm prefix." },
+            "covers": { "type": "string", "enum": ["lines.jsonl"] }
+          }
+        },
+        "line_count": { "type": "integer", "minimum": 0, "description": "Number of row objects in lines.jsonl. Must equal the actual line count." },
+        "generated_at": { "type": "string", "description": "UTC ISO-8601 instant the bundle was produced (…Z, second precision). This is the only manifest field that differs between two runs over identical input; it is deliberately NOT covered by content_hash, so payload reproducibility can still be asserted byte-for-byte." },
+        "cartographer_version": { "type": "string", "description": "Version of the producing exporter. Bump it whenever a change would move content_hash for unchanged input." },
+        "textdomains": {
+          "type": "array",
+          "description": "Byte-sorted union of the textdomains in the SOURCE (.pot) corpus — the full inventory, not only the domains that produced rows. A domain present upstream but missing on the target side is still listed here, and is named in the producer's report rather than silently dropped or counted as zero.",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "line": {
+      "type": "object",
+      "description": "One row of lines.jsonl = one gettext entry. A plural entry is ONE row, never several. Every property below is required and always present; a value that does not apply is null, never absent and never an empty string.",
+      "additionalProperties": false,
+      "required": ["segment_id", "seq", "textdomain", "file", "msgctxt", "source_en",
+                   "source_en_display", "target_pl", "target_pl_display", "fuzzy",
+                   "plural_forms", "placeholders", "markup_flags", "string_class",
+                   "neighbours", "char_limit", "last_changed", "pool",
+                   "placeholder_check", "source_ref"],
+      "properties": {
+        "segment_id": {
+          "type": "string",
+          "pattern": "^[^:]+:[0-9a-f]{12}$",
+          "description": "Stable join key across exports. EXACT PREIMAGE, reproduce it verbatim or your ids will not join: textdomain + \":\" + sha1( ((msgctxt or \"\") + \"|\" + msgid_raw).encode(\"utf-8\") ).hexdigest()[:12], lowercase. It is a pure function of (textdomain, msgctxt, msgid_raw) and NOTHING else — not seq, not file, not line number, not msgid_plural, and not the unescaped display form of the text. msgid_raw is the msgid with PO escapes intact (a newline is the two characters backslash-n), including any Wesnoth ^-context prefix. HAZARD, recorded and deliberately not fixed: the separator is a literal \"|\", and \"|\" occurs inside Wesnoth source text as the documented $var| terminator. The preimage is injective here only because msgctxt is empty on every Wesnoth entry, so nothing can straddle the separator. For the NEXT lockit — one that actually uses msgctxt — this construction is NOT injective and must be revisited before it is reused. NOTE: this is a different function from the 10-character internal_id that the Cartographer's PO reader mints for its own use (that one hashes domain and plural into the preimage with a 0x1f separator). They are the same shape and different values; joining on the wrong one produces a bundle that validates and matches nothing."
+        },
+        "seq": { "type": "integer", "minimum": 0, "description": "0-based, dense, global across the bundle. Export order is: textdomains byte-sorted (NOT locale-sorted), then entry order within the file." },
+        "textdomain": { "type": "string", "description": "The gettext textdomain, i.e. the first half of segment_id." },
+        "file": { "type": "string", "description": "Path of the target .po the row was read from, relative to the corpus root, forward slashes." },
+        "msgctxt": {
+          "type": ["string", "null"],
+          "description": "The disambiguating context, or null. For gettext lockits that use msgctxt this is that field verbatim. For Wesnoth it is DERIVED: Wesnoth disambiguates with a ^-prefix inside the msgid rather than with msgctxt, so the caret prefix is surfaced here as the native disambiguator. source_en still carries the WHOLE raw msgid including the prefix, because the id is computed over that. Leaving this null would discard the gender/agreement prefix family, which is the most translation-critical signal in this corpus for a Slavic target."
+        },
+        "source_en": { "type": "string", "description": "NORMATIVE source text: the RAW msgid, PO escapes intact, exactly as the foundation reader returns it, whitespace untouched. The id is computed over this, and any future character offset anchors here." },
+        "source_en_display": { "type": "string", "description": "DERIVED and NON-NORMATIVE: source_en with PO escapes resolved to real characters. Exists so a consumer can hand natural prose to a model without the producer having to guess which form it wants. Never an input to placeholder or markup detection — those run on the raw form, because that is what the detectors are written against." },
+        "target_pl": { "type": ["string", "null"], "description": "NORMATIVE target text: the RAW msgstr (msgstr[0] for a plural entry), escapes intact. null when the target is empty — never the empty string. A fuzzy entry keeps its text here; see pool and fuzzy." },
+        "target_pl_display": { "type": ["string", "null"], "description": "DERIVED and NON-NORMATIVE unescaped form of target_pl. null EXACTLY when target_pl is null." },
+        "fuzzy": { "type": "boolean", "description": "The gettext #, fuzzy flag. Kept as its own boolean so the distinction survives pool collapsing fuzzy into untranslated." },
+        "plural_forms": {
+          "type": ["object", "null"],
+          "description": "null for a non-plural entry. For a plural entry, an object carrying BOTH sides — the earlier array-of-strings shape could not say which side a string belonged to. source_en stays the singular msgid and target_pl stays msgstr[0], so a consumer that ignores plurals entirely still reads a coherent bilingual pair and never a broken row.",
+          "additionalProperties": false,
+          "required": ["source_plural", "source_plural_display", "target_forms", "target_forms_display", "target_nplurals"],
+          "properties": {
+            "source_plural": { "type": "string", "description": "msgid_plural, RAW." },
+            "source_plural_display": { "type": "string", "description": "msgid_plural, unescaped. Derived, non-normative." },
+            "target_forms": { "type": "array", "items": { "type": "string" }, "description": "Every msgstr[N] in index order, RAW. May contain empty strings for a partially filled plural; that is data, not an error." },
+            "target_forms_display": { "type": "array", "items": { "type": "string" }, "description": "Unescaped mirror of target_forms, same length. Derived, non-normative." },
+            "target_nplurals": { "type": "integer", "minimum": 1, "description": "nplurals from the target .po header's Plural-Forms, NOT the length of target_forms. When the array length disagrees with the header that is a REPORTED number, never a silent fix — the header is what the runtime uses, so the array is the thing that is wrong." }
+          }
+        },
+        "placeholders": {
+          "type": "array",
+          "description": "Plain string tokens found in the RAW source_en: Wesnoth $var / $obj.attr / $arr[0] (the trailing | terminator normalised away, so $x and $x| are one token), {brace} name-generator keys, and printf specifiers. Sorted, deduplicated. DELIBERATELY NOT SPANS: character offsets are strictly more informative and are what the span-oriented consumer's profile wants, but this profile's schema is closed and would reject them. A consumer that needs spans takes the span profile, not this one.",
+          "items": { "type": "string" }
+        },
+        "markup_flags": {
+          "type": "array",
+          "description": "Which markup systems the RAW source_en carries, from the producer's markup family detection. Closed vocabulary. Sorted, deduplicated, possibly empty.",
+          "items": { "type": "string", "enum": ["pango", "docbook", "po4a", "entity", "metasyntax", "newline"] }
+        },
+        "string_class": {
+          "type": "string",
+          "description": "\"<domain-group>/<caret-family>\", or \"unknown\" when neither resolves. Deliberately NOT the bare textdomain: a consumer reading string_class \"wesnoth-lib\" gets a value that validates and carries no meaning. The domain group comes from the profiled anatomy (ui, core, units, campaign, help, manpages, tutorial, mp_editor, tools); the caret family from the ^-context prefix registry, with \"plain\" for an entry that has no caret prefix.",
+          "enum": ["unknown",
+            "ui/gender_agreement","ui/addons","ui/si_units","ui/list_grammar","ui/hotkeys","ui/files_storage","ui/system_env","ui/other_ui","ui/plain",
+            "core/gender_agreement","core/addons","core/si_units","core/list_grammar","core/hotkeys","core/files_storage","core/system_env","core/other_ui","core/plain",
+            "units/gender_agreement","units/addons","units/si_units","units/list_grammar","units/hotkeys","units/files_storage","units/system_env","units/other_ui","units/plain",
+            "campaign/gender_agreement","campaign/addons","campaign/si_units","campaign/list_grammar","campaign/hotkeys","campaign/files_storage","campaign/system_env","campaign/other_ui","campaign/plain",
+            "help/gender_agreement","help/addons","help/si_units","help/list_grammar","help/hotkeys","help/files_storage","help/system_env","help/other_ui","help/plain",
+            "manpages/gender_agreement","manpages/addons","manpages/si_units","manpages/list_grammar","manpages/hotkeys","manpages/files_storage","manpages/system_env","manpages/other_ui","manpages/plain",
+            "tutorial/gender_agreement","tutorial/addons","tutorial/si_units","tutorial/list_grammar","tutorial/hotkeys","tutorial/files_storage","tutorial/system_env","tutorial/other_ui","tutorial/plain",
+            "mp_editor/gender_agreement","mp_editor/addons","mp_editor/si_units","mp_editor/list_grammar","mp_editor/hotkeys","mp_editor/files_storage","mp_editor/system_env","mp_editor/other_ui","mp_editor/plain",
+            "tools/gender_agreement","tools/addons","tools/si_units","tools/list_grammar","tools/hotkeys","tools/files_storage","tools/system_env","tools/other_ui","tools/plain"]
+        },
+        "neighbours": {
+          "type": "object",
+          "description": "The previous and next segment_id in export order WITHIN THE SAME FILE. null at a file boundary — neighbours never cross textdomains, because adjacency across two unrelated domains is not context.",
+          "additionalProperties": false,
+          "required": ["prev", "next"],
+          "properties": {
+            "prev": { "type": ["string", "null"] },
+            "next": { "type": ["string", "null"] }
+          }
+        },
+        "char_limit": { "type": ["integer", "null"], "description": "Hard display length budget, when the lockit declares one. gettext has no such field, so this is null for every gettext row; the field is kept so a lockit that does declare limits can fill it without a schema change." },
+        "last_changed": { "type": ["string", "null"], "description": "When the row's .po file last changed upstream, ISO-8601, or null when it cannot be established cheaply and honestly. A shallow or grafted checkout reports the same date for every file, which is not an answer — null is." },
+        "pool": {
+          "type": "string",
+          "enum": ["eval", "reference", "untranslated"],
+          "description": "Which pool the row belongs to. Owned by the EXPORT, not by a downstream slicing step. untranslated when the target is empty AND when the entry is fuzzy (gettext does not use fuzzy strings at runtime, so fuzzy is not done); eval otherwise. \"reference\" is never written by an export — only a later curation step assigns it."
+        },
+        "placeholder_check": {
+          "type": "string",
+          "enum": ["ok", "source_only", "target_only", "mismatch", "not_applicable"],
+          "description": "Cross-locale placeholder agreement, computed as sets over the source tokens and the union of tokens across all target forms. ok: the sets are equal. source_only: the target dropped one or more source tokens and invented none. target_only: the target invented one or more tokens and dropped none. mismatch: both. not_applicable: the row is untranslated, or neither side carries a placeholder. THIS IS NOT BOOKKEEPING AND NOT A REFUSAL: a mismatched placeholder is a real upstream translation bug that has often been in a locale for years, and an exporter that refuses on it declines to export a corpus that legitimately contains it. The field exists so a curation step can either exclude such rows or include them deliberately labelled as known-bad reference cases, which it cannot do if the export threw the finding away."
+        },
+        "source_ref": {
+          "type": ["array", "null"],
+          "description": "The gettext #: source references for this entry (\"path/to/file.cpp:123\"), verbatim and in file order, or null when the entry carries none. Provenance into the GAME's source, not into the lockit — the lockit location is `file` plus export order.",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

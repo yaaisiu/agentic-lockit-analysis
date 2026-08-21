@@ -509,6 +509,111 @@ def test_manifest_shape_and_provenance(tmp_path):
     assert EB.verify_manifest(bad, rows, payload)
 
 
+# ---- the contract-version discriminator, and the pair that shows what `const` buys ----
+# Read the PUBLISHED schema rather than a second copy of its rules: a mirror that drifts from
+# contracts/bundle.schema.json is exactly the bug these tests exist to catch. The repo has no
+# jsonschema dependency on purpose (the suite must run on a fresh clone with nothing
+# installed), so this is a small reader covering the keywords the manifest object actually
+# uses — required, additionalProperties:false, type, const, enum, pattern.
+
+SCHEMA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",
+                           "contracts", "bundle.schema.json")
+
+
+def _manifest_schema():
+    with open(SCHEMA_PATH, encoding="utf-8") as fh:
+        return json.load(fh)["$defs"]["manifest"]
+
+
+def _schema_problems(obj, schema, path="manifest"):
+    import re as _re
+    p = []
+    types = {"object": dict, "array": list, "string": str, "integer": int, "boolean": bool}
+    t = schema.get("type")
+    for want in ([t] if isinstance(t, str) else (t or [])):
+        if want == "null":
+            if obj is None:
+                return []
+        elif isinstance(obj, types.get(want, object)) and not (want == "integer"
+                                                              and isinstance(obj, bool)):
+            break
+    else:
+        if t:
+            return [f"{path}: type {type(obj).__name__} not in {t}"]
+    if "const" in schema and obj != schema["const"]:
+        p.append(f"{path}: const {schema['const']!r} != {obj!r}")
+    if "enum" in schema and obj not in schema["enum"]:
+        p.append(f"{path}: {obj!r} not in enum")
+    if "pattern" in schema and isinstance(obj, str) and not _re.match(schema["pattern"], obj):
+        p.append(f"{path}: {obj!r} does not match {schema['pattern']}")
+    if isinstance(obj, dict):
+        for k in schema.get("required", []):
+            if k not in obj:
+                p.append(f"{path}: missing required {k!r}")
+        props = schema.get("properties", {})
+        if schema.get("additionalProperties") is False:
+            for k in obj:
+                if k not in props:
+                    p.append(f"{path}: {k!r} is outside the schema "
+                             f"(additionalProperties: false)")
+        extra = schema.get("additionalProperties")
+        for k, v in obj.items():
+            sub = props.get(k) or (extra if isinstance(extra, dict) else None)
+            if sub:
+                p += _schema_problems(v, sub, f"{path}.{k}")
+    if isinstance(obj, list) and isinstance(schema.get("items"), dict):
+        for i, v in enumerate(obj):
+            p += _schema_problems(v, schema["items"], f"{path}[{i}]")
+    return p
+
+
+def _synthetic_manifest(tmp_path):
+    root = _fixture_corpus(tmp_path)
+    domains, _m = EB.corpus_inventory(root, "pl")
+    rows, _s, _c, dates = EB.build_rows(root, "pl", domains)
+    payload = EB.serialize(rows)
+    upstream = {"remote": "https://example.invalid/x.git", "commit": "0" * 40,
+                "branch": "master"}
+    m = EB.build_manifest("wesnoth", "pl", rows, payload, domains, upstream, dates,
+                          generated_at="2026-01-01T00:00:00Z")
+    return m, rows, payload
+
+
+def test_manifest_validates_against_published_schema(tmp_path):
+    m, _rows, _payload = _synthetic_manifest(tmp_path)
+    assert _schema_problems(m, _manifest_schema()) == []
+
+
+def test_wrong_bundle_version_fails_validation(tmp_path):
+    """THE POINT OF THE FIELD. `const` — not `"type": "string"` — is what makes a bundle
+    written against another version of the contract fail LOUDLY here instead of validating
+    and meaning something else. This repo's Veloren exporter shipped 0.2.0 and 0.3.0 bundles
+    that validated identically while one token meant opposite things; an unconstrained
+    version string is what allowed it. Keep this test next to the positive one above."""
+    m, rows, payload = _synthetic_manifest(tmp_path)
+    for wrong in ("2.0.0", "1.0.1", "0.3.0", ""):
+        bad = json.loads(json.dumps(m)); bad["bundle_version"] = wrong
+        problems = _schema_problems(bad, _manifest_schema())
+        assert any("bundle_version" in x and "const" in x for x in problems), (wrong, problems)
+        # the exporter's own self-check refuses it too, so a bad version cannot be WRITTEN
+        assert any("bundle_version" in x for x in EB.verify_manifest(bad, rows, payload))
+    gone = json.loads(json.dumps(m)); del gone["bundle_version"]
+    assert any("required 'bundle_version'" in x for x in _schema_problems(gone,
+                                                                         _manifest_schema()))
+
+
+def test_bundle_version_is_pinned_to_1_0_0(tmp_path):
+    """A bump must be a deliberate edit to this line, never a silent drift. bundle_version
+    versions THE CONTRACT; cartographer_version versions the producer and is a different
+    thing, which is why they are pinned separately."""
+    assert EB.BUNDLE_VERSION == "1.0.0"
+    assert _manifest_schema()["properties"]["bundle_version"]["const"] == "1.0.0"
+    assert "bundle_version" in _manifest_schema()["required"]
+    m, _rows, _payload = _synthetic_manifest(tmp_path)
+    assert m["bundle_version"] == "1.0.0"
+    assert list(m)[0] == "bundle_version"          # key order is pinned by MANIFEST_KEYS
+
+
 def test_provenance_is_a_stop_condition(tmp_path):
     """No git checkout -> no bundle. There is no degraded output path by design."""
     try:

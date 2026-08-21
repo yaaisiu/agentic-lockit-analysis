@@ -13,10 +13,15 @@
       "type": "object",
       "description": "manifest.json — one object describing the whole bundle.",
       "additionalProperties": false,
-      "required": ["game", "source_format", "source_locale", "target_locale", "upstream",
-                   "extraction_script_hash", "content_hash", "line_count", "generated_at",
-                   "cartographer_version", "textdomains"],
+      "required": ["bundle_version", "game", "source_format", "source_locale", "target_locale",
+                   "upstream", "extraction_script_hash", "content_hash", "line_count",
+                   "generated_at", "cartographer_version", "textdomains"],
       "properties": {
+        "bundle_version": {
+          "type": "string",
+          "const": "1.0.0",
+          "description": "Version of THIS CONTRACT — the bilingual gettext profile this file describes — and NOT of the bundle instance and NOT of the producer. Pinned with const on purpose: an unconstrained version token lets two bundles that mean different things by the same token validate identically, which is exactly what happened in this repository already — scripts/veloren/export_bundle.py shipped 0.2.0 and 0.3.0 bundles that no validator could tell apart, and the version string was the only discriminator a consumer had. With const, a consumer holding a mirror of 1.0.0 rejects a 2.0.0 bundle loudly at validation time instead of reading it as though nothing had changed. cartographer_version is a DIFFERENT thing: it versions the producing exporter, and one producer version can ship two contracts just as easily as one contract can ship from two producer versions. The 0.2.0 / 0.3.0 numbering used by this repository's Veloren exporter belongs to a DIFFERENT consumer's contract — an unrelated series that this one deliberately does not continue, so do not assume a single numbering across this repository. BUMP RULE: a change a conforming consumer can ignore is a minor bump, and any change to the field list, to a field's type, or to a field's meaning is a major bump."
+        },
         "game": {
           "type": "string",
           "description": "Stable slug of the game / dataset this lockit belongs to, e.g. \"battle-for-wesnoth\"."

@@ -80,7 +80,19 @@ import validate_markup
 import validate_placeholders as VPH
 from list_context_prefixes import family as caret_family
 
-# ---- producer identity -------------------------------------------------------------
+# ---- contract + producer identity ---------------------------------------------------
+# BUNDLE_VERSION versions THE CONTRACT (contracts/bundle.schema.json, the bilingual gettext
+# profile) — not the bundle instance and not the producer. It is pinned there with `const`,
+# so a consumer holding a mirror of one version REJECTS a bundle written against another
+# instead of validating it and meaning something else. That failure is not hypothetical: the
+# Veloren exporter in this repo shipped 0.2.0 and 0.3.0 bundles that validated identically
+# while a 'selector' span meant opposite things. Its numbering is a DIFFERENT consumer's
+# contract and this series deliberately does not continue it.
+# Bump rule: a change a conforming consumer can ignore is minor; any change to the field
+# list, to a field's type, or to a field's meaning is major.
+# CARTOGRAPHER_VERSION is the PRODUCER's version and is a different thing — one producer
+# version can ship two contracts, and one contract can ship from two producer versions.
+BUNDLE_VERSION       = '1.0.0'
 CARTOGRAPHER_VERSION = '0.1.0'
 SOURCE_FORMAT        = 'gettext-po'
 SOURCE_LOCALE        = 'en'
@@ -133,9 +145,9 @@ ROW_KEYS = ('segment_id', 'seq', 'textdomain', 'file', 'msgctxt', 'source_en',
             'last_changed', 'pool', 'placeholder_check', 'source_ref')
 PLURAL_KEYS = ('source_plural', 'source_plural_display', 'target_forms',
                'target_forms_display', 'target_nplurals')
-MANIFEST_KEYS = ('game', 'source_format', 'source_locale', 'target_locale', 'upstream',
-                 'extraction_script_hash', 'content_hash', 'line_count', 'generated_at',
-                 'cartographer_version', 'textdomains')
+MANIFEST_KEYS = ('bundle_version', 'game', 'source_format', 'source_locale', 'target_locale',
+                 'upstream', 'extraction_script_hash', 'content_hash', 'line_count',
+                 'generated_at', 'cartographer_version', 'textdomains')
 
 _ID_RE = re.compile(r'^[^:]+:[0-9a-f]{12}$')
 
@@ -531,6 +543,7 @@ def build_manifest(lockit, locale, rows, payload, textdomains, upstream, revisio
     upstream['po_revision_dates'] = {d: revision_dates.get(d, '') for d in textdomains}
     esh, _files = extraction_script_hash()
     return {
+        'bundle_version': BUNDLE_VERSION,
         'game': GAME_SLUG.get(lockit, lockit),
         'source_format': SOURCE_FORMAT,
         'source_locale': SOURCE_LOCALE,
@@ -646,6 +659,10 @@ def verify_manifest(m, rows, payload):
     extra = [k for k in m if k not in MANIFEST_KEYS]
     if extra:
         p.append(f'manifest: keys outside the schema (additionalProperties:false): {extra}')
+    if m.get('bundle_version') != BUNDLE_VERSION:
+        p.append(f'manifest: bundle_version {m.get("bundle_version")!r} != {BUNDLE_VERSION!r} '
+                 '(the schema pins it with const — a bundle written against another version '
+                 'of the contract must fail loudly, not validate and mean something else)')
     if m.get('source_format') != SOURCE_FORMAT:
         p.append(f'manifest: source_format must be {SOURCE_FORMAT!r}')
     up = m.get('upstream') or {}

@@ -91,6 +91,16 @@ ids we emit forever, so the rules below are contract, not style.
   is a real upstream translation bug that has been in the locale for years → **never refuse**;
   record it per row in `placeholder_check`. Refusing on those would decline to export a corpus
   that legitimately contains them. See [[refusal-scope-discipline]] (proposed s008).
+- **`bundle_version` is the contract's version and it is PINNED (added s009, 2026-08-21).**
+  The manifest carries `bundle_version: "1.0.0"`, pinned in the schema with **`const`**, not
+  typed as a string. That is the whole mechanism: an unconstrained version token lets two
+  bundles that mean different things by the same token validate identically — which already
+  happened in this repo, at the Veloren exporter's `0.2.0` → `0.3.0`. With `const`, a consumer
+  holding a mirror of `1.0.0` **rejects** a `2.0.0` bundle at validation time. `cartographer_version`
+  is the **producer's** version and a different thing; the Veloren `0.2.x` series is a **different
+  consumer's contract** and this one deliberately does not continue it. Bump rule: ignorable by a
+  conforming consumer → minor; any change to the field list, a field's type, or a field's meaning
+  → major. See [[pinned-version-discriminator]].
 - **Byte-stable payload**, composed in memory, `lines.jsonl` written **before** `manifest.json`,
   `content_hash` over the bytes as written. *Standing rule: whoever rewrites the rows rewrites
   the manifest.* `--check <bundle-dir> <source-po-root>` re-exports in memory and byte-compares.
@@ -101,6 +111,15 @@ ids we emit forever, so the rules below are contract, not style.
 - **Real-corpus result (Wesnoth pl, 2026-08-21):** 26,312 rows, 0 `segment_id` collisions, 54
   plurals, 712 derived `msgctxt`, 22 rows with real placeholder defects, `--check` REPRODUCIBLE.
   The bundle itself is gitignored (`data/bundles/wesnoth-pl/`) — CC-BY-SA content, public repo.
+  **Re-exported at s009** to carry `bundle_version`: `content_hash` unchanged (`f05b545f…`),
+  `extraction_script_hash` moved to `3c46b350…`, `--check` still REPRODUCIBLE. Exactly three
+  manifest fields moved — `bundle_version`, `extraction_script_hash`, `generated_at` — and that
+  was **proved**, by rebuilding the shipped manifest from the new one and hashing back to the
+  shipped file's recorded digest rather than asserting it. A fourth moved field breaks that hash.
+- **Pinning a manifest digest: pin the payload, not the manifest.** `content_hash` is the stable
+  identity of the rows; the sha256 of `manifest.json` moves on every export because `generated_at`
+  lives inside it. A downstream artifact that records "the manifest's hash" is pinning **one
+  write**, not the bundle.
 
 ## Deferred / candidate extensions (see [[open-questions]])
 - **DONE (B3):** `family()` now has a `gender/agreement` family (was misfiled under other/UI).

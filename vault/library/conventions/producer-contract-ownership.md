@@ -5,6 +5,7 @@ status: accepted
 first_seen: veloren
 also_seen: [wesnoth]
 promoted_session: "008"
+updated_session: "009"
 ---
 
 # Convention: who owns what, when this system produces for a consumer
@@ -35,6 +36,13 @@ or declaring that we own everything and letting two consumers' needs collide.
   worse than a reported bug.
 - **Where our field list and a consumer's copy disagree, ours wins and theirs mirrors.** That
   is what "normative" means, and it is only defensible because of the first bullet.
+- **Each contract owns its own VERSION SERIES, and the series do not converge either.** A repo
+  with two consumers has two unrelated numberings running at once. Veloren's contract was at
+  `0.3.0` while the bilingual contract started at `1.0.0`; neither continues the other, and a
+  reader who assumes one numbering across the repo will draw a compatibility conclusion that
+  does not exist. **Say so in the version field's own `description`** — the person who needs it
+  is transcribing your schema into a mirror months later, and that file is all they are reading.
+  The version itself must be pinned, not merely present: [[pinned-version-discriminator]].
 
 ## Publish the contract, in our repo
 
@@ -56,7 +64,13 @@ must carry the definitions a consumer cannot otherwise reproduce:
 - which fields are **derived and non-normative** (and which one the offsets anchor to);
 - any deliberate exception to `additionalProperties: false`, **and why** (a map whose keys are
   data cannot be listed in advance) — and no second exception;
-- the standing operational rules (*whoever rewrites the rows rewrites the manifest*).
+- the standing operational rules (*whoever rewrites the rows rewrites the manifest*);
+- **which version of the contract the artifact conforms to, pinned with `const`** — and which
+  *other* versions in the repo belong to somebody else's contract.
+
+A field whose meaning the exporter chose but the schema never states is a field the mirror-holder
+will guess at. A `description` cannot move the payload hash, so there is never a reason to defer
+one past the session that made the choice.
 
 This unexpressible half — schemas **plus** a construct-mapping guide — is exactly what a
 generated converter would need, which is why it is the seed of the converter-generator idea in
@@ -68,5 +82,11 @@ the backlog (G6).
 draft, which differ, **and why**. Their mirror update is written *from* it. Say plainly what you
 deliberately did **not** build and which other profile to use instead.
 
+**Give the mirror update the schema diff as text**, since transcription is what it is — and one
+caveat with it: a mirror only helps if the consumer validates with something that honours
+`const`. A hand-rolled "required keys present, types match" checker reproduces the exact defect
+a pinned version exists to close, while appearing to validate.
+
 **Companion:** [[byte-stable-artifact]] · [[derived-identity-keys]] ·
-[[boundary-vocabulary-mapping]] · [[refusal-scope-discipline]].
+[[boundary-vocabulary-mapping]] · [[refusal-scope-discipline]] ·
+[[pinned-version-discriminator]] · [[schema_check]].

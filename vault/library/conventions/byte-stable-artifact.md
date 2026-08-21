@@ -5,6 +5,7 @@ status: accepted
 first_seen: veloren
 also_seen: [wesnoth]
 promoted_session: "008"
+updated_session: "009"
 proposed_session: "007"
 ---
 
@@ -65,12 +66,27 @@ that caused it.
     `verify_manifest`, `verify_payload_bytes`), each returning `list[str]`, all collected, then
     a single refuse-to-write. Print the first ~25. A warning nobody reads is not a check.
     Scope every refusal per [[refusal-scope-discipline]].
-11. **Keep a version discriminator on the artifact.** Two revisions of a contract can validate
-    against the same schema while meaning **opposite things by the same token** (Veloren
-    0.2.0 → 0.3.0: a `selector` span went from covering a whole construct to covering one piece
-    of syntax). The version string is then the *only* discriminator a consumer has. **Never
-    reuse a version.** Note the counter-case: the Wesnoth bilingual manifest has a closed field
-    list with no such field, and that is recorded as a known gap, not as an acceptable default.
+11. **Keep a version discriminator on the artifact — and PIN it in the schema.** Two revisions
+    of a contract can validate against the same schema while meaning **opposite things by the
+    same token** (Veloren 0.2.0 → 0.3.0: a `selector` span went from covering a whole construct
+    to covering one piece of syntax). The version string is then the *only* discriminator a
+    consumer has. **Never reuse a version** — and declare it `"const": "<version>"`, never
+    `"type": "string"`, or the discriminator is decoration: a consumer's mirror validates a
+    bundle from another contract version and reads it as though nothing changed. See
+    [[pinned-version-discriminator]] for the full rule and the two instances.
+    *(The Wesnoth bilingual manifest was the recorded counter-case — a closed field list with
+    no such field. Closed at s009: `bundle_version`, required, `const "1.0.0"`.)*
+12. **Pin the payload, not the manifest.** The manifest's own digest moves on every run, because
+    `generated_at` lives inside it. `content_hash` over the payload is the artifact's stable
+    identity; a sha256 of `manifest.json` pins **one write** of one manifest. A downstream file
+    that records "the manifest's hash" as though it identified the bundle will re-pin on every
+    export and read as drift when nothing drifted. Say which one you mean, in the note that
+    records it.
+13. **A field's meaning is part of the contract — publish it where the transcriber reads.** A
+    field whose meaning was chosen by the exporter but never written into the schema's
+    `description` is a field the mirror-holder will guess at. Writing a description costs
+    nothing (it cannot move the payload hash), so there is no reason to defer it past the
+    session that made the choice.
 
 ## How to apply
 Start from [[byte_stable_jsonl]] — it is items 1–7 and 10 as working code. Add the row builder
@@ -79,4 +95,5 @@ and the contract's field list; leave the byte layer alone. Then see
 [[derived-identity-keys]] for the id.
 
 **Companion:** [[refusal-scope-discipline]] · [[derived-identity-keys]] ·
-[[producer-contract-ownership]] · [[boundary-vocabulary-mapping]].
+[[producer-contract-ownership]] · [[boundary-vocabulary-mapping]] ·
+[[pinned-version-discriminator]] · [[negative-test-mutation-proof]] · [[schema_check]].

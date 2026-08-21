@@ -53,3 +53,16 @@ Generalised terms. **No lockit content here** — definitions only.
 - **Span vs token** — a **token** is the construct's text; a **span** is `(start, end, text)`
   against the string it came from. A span used as a *mask* must never contain translatable text.
   See [[construct-spans-not-tokens]].
+- **Contract version vs producer version** — a **contract version** (`bundle_version`) says which
+  version of the *published field-list-and-meanings* an artifact conforms to; a **producer
+  version** (`cartographer_version`) says which version of the *code* wrote it. One producer
+  version can ship two contracts, and one contract can ship from two producer versions, so
+  neither substitutes for the other. A third repo may run its own unrelated series for a
+  different consumer's contract. See [[pinned-version-discriminator]].
+- **Pinned (`const`)** — a schema field declared `"const": "<value>"` rather than
+  `"type": "string"`, so a consumer's mirror **rejects** an artifact from another contract
+  version instead of validating it and reading it as though nothing changed. An unpinned version
+  field is decoration. See [[pinned-version-discriminator]].
+- **Mutation proof** — removing or loosening a guard *in memory* to confirm its negative test
+  actually fails without it. A guard test that has never been watched fail is a passing test, not
+  a proof. See [[negative-test-mutation-proof]].

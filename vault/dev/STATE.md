@@ -7,6 +7,44 @@ active_lockit: wesnoth
 
 # STATE — you are here
 
+## s009 — THE CONTRACT GETS A VERSION, AND THE VERSION GETS A PIN (DONE, 2026-08-21)
+**One field, run as an unattended brief (TASK-I3).** No gates fired; no change to the anatomy, the
+row builder, or any per-row field. Closes the loudest thread s008 left open. Full detail:
+`vault/dev/sessions/009-bundle-version-discriminator.md`.
+- **`bundle_version: "1.0.0"` is now required in the bilingual manifest and PINNED with `const`**
+  in `contracts/bundle.schema.json` — **not** `"type": "string"`, and that distinction *is* the
+  task. An unconstrained version token lets two bundles that mean different things by the same
+  token validate identically; this repo was already bitten by it at the Veloren exporter's
+  0.2.0→0.3.0. With `const`, a consumer holding a mirror of 1.0.0 **rejects** a 2.0.0 bundle.
+- **Three versions, three owners:** `bundle_version` = **the contract** · `cartographer_version` =
+  **the producer** · the Veloren `0.2.x` series = **a different consumer's contract**, deliberately
+  not continued here. Bump rule in the schema: ignorable by a conforming consumer → minor; any
+  change to the field list, a field's type, or a field's **meaning** → major.
+- **Re-exported Wesnoth pl:** `content_hash` **unchanged** `f05b545f…` (26,312 rows),
+  `extraction_script_hash` → `3c46b350…`, `--check` **REPRODUCIBLE**. Tests **34 → 37**. Commit
+  `3dc4230`.
+- **Exactly three manifest fields moved, and it was PROVED, not asserted** — the shipped manifest
+  was rebuilt from the new one under the stated diff and hashed back to its recorded digest. When
+  an artifact is overwritten, a recorded digest of the old bytes is still a complete comparison.
+- **THE LESSON — a guard test proves nothing until it has been shown to fail.** Loosening `const`
+  → `"type": "string"` *in memory* makes a `2.0.0` manifest validate cleanly. A negative test that
+  has never been watched go green-when-the-guard-is-gone is a passing test, not a proof.
+- **For the slice session (next):** manifest sha256 is
+  `f3724964b2ab73e7f3a78192150bd4261777b144420b3ffd51f406633d88eece` — **and it moves on every
+  re-export**, because `generated_at` is inside the manifest. Pin `content_hash` for identity; a
+  manifest digest pins **one write**.
+- **Refused to guess:** whether `--check` should read the schema *file* at runtime (it validates
+  against the exporter's hand-written mirror; making the producer read its own JSON Schema needs a
+  dependency on the write path — an architectural call the brief did not settle).
+- **LIBRARY: 5 promotions APPROVED + APPLIED at this retro** — 2 new heuristics
+  (`pinned-version-discriminator`, `negative-test-mutation-proof`), 2 convention updates
+  (`byte-stable-artifact` rules 11–13, `producer-contract-ownership` version series), 1 new
+  template (`schema_check.py` — validate against the *published* schema file, no dependency),
+  plus 3 glossary terms. **Nothing pending.**
+- **NEXT — Marcin's call.** The **curated slice** (next brief, gated, with a human — and this task
+  was the window before it) · the **consumer's mirror update** (their repo, transcription) · **G6**
+  · or the parked tracks.
+
 ## s008 — WESNOTH BILINGUAL BUNDLE EXPORTER + we now PUBLISH the contract (DONE, 2026-08-21)
 **A second producer role, run as an unattended brief (TASK-I1).** No gates fired; the confirmed
 anatomy is unchanged. Cartographer exports a profiled gettext lockit as a normalized **bilingual**
@@ -45,7 +83,8 @@ of guessing at one. Full detail: `vault/dev/sessions/008-wesnoth-bilingual-bundl
   into the backlog. Most transferable single rule: **vocabulary mapping at the boundary**.
 - **Flagged, not fixed:** the bilingual manifest has **no `bundle_version` discriminator** and the
   closed field list forbids adding one — the exact absence that bit the Veloren contract at
-  0.2.0→0.3.0. Cheap now, expensive after the consumer's freeze.
+  0.2.0→0.3.0. Cheap now, expensive after the consumer's freeze. *(CLOSED at s009: added and
+  pinned with `const`. See above.)*
 - **LIBRARY: all 12 promotions APPLIED at the s008 retro** (s008's 5 + s007's 7, which had been
   pending a session). The library grew by **4 conventions** (`byte-stable-artifact`,
   `producer-contract-ownership`, `derived-identity-keys`, `boundary-vocabulary-mapping`),
